@@ -17,8 +17,23 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGL")
 add_definitions(-DUSE_OPENGL)
 endif(USE_OPENGL)
 
+option(XCB_SUPPORT "Support XCB" ON)
+if(XCB_SUPPORT)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lxcb")
+add_definitions(-DXCB_SUPPORT)
+endif(XCB_SUPPORT)
+
+option(WAYLAND_SUPPORT "Support Wayland" ON)
+if(WAYLAND_SUPPORT)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwayland-client ")
+add_definitions(-DWAYLAND_SUPPORT)
+endif(WAYLAND_SUPPORT)
+
 add_subdirectory(src/backend)
 include_directories(src src/backend)
-add_executable(dear src/main.cpp)
+add_executable(dear 
+	src/main.cpp
+	src/Config.cpp
+)
 
 target_link_libraries(dear dear_Backend)

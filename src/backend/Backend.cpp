@@ -28,3 +28,10 @@ BackendBase* Backend::getBackend(BackendBase::LibType lib, BackendBase::WMType w
 
 	return newBackend;
 }
+
+BackendBase::~BackendBase(){
+	// Vulkan
+	#ifdef USE_VULKAN
+	vkDestroyInstance(vkInstance, nullptr);
+	#endif
+}

@@ -5,7 +5,7 @@
 
 class BackendDisplay : public BackendBase {
 public:
-
+	BackendDisplay(BackendBase::LibType lib = BackendBase::LibType::AUTO_LIB);
 private:
 	// run()
 };

@@ -10,14 +10,20 @@
 #endif
 
 #include <Base.hpp>
-#include <Wayland.hpp>
-#include <Xcb.hpp>
 #include <Display.hpp>
+
+#ifdef WAYLAND_SUPPORT
+#include <Wayland.hpp>
+#endif
+#ifdef XCB_SUPPORT
+#include <Xcb.hpp>
+#endif
 
 namespace Backend{
 	BackendBase* getBackend(BackendBase::LibType lib, BackendBase::WMType wm);
 	#ifdef USE_VULKAN
 	void initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBase::WMType &wm);
+	VkPhysicalDevice pickPhyDevice(VkInstance instance, BackendBase::WMType &wm);
 	#endif
 	//void initGL();
 }

@@ -1,5 +1,4 @@
 #include <Xcb.hpp>
-#include <unistd.h>
 
 BackendXcb::BackendXcb(BackendBase::LibType lib):
 	BackendBase(lib)
@@ -36,7 +35,7 @@ BackendXcb::BackendXcb(BackendBase::LibType lib):
 	}
 	screen = iter.data;
 	// Window
-	windowId = xcb_generate_id(connection);
+	window = xcb_generate_id(connection);
 	uint32_t eventMask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
 	uint32_t valList[] = {
 		screen->black_pixel,
@@ -45,18 +44,57 @@ BackendXcb::BackendXcb(BackendBase::LibType lib):
 	xcb_create_window(
 		connection,
 		XCB_COPY_FROM_PARENT,
-		windowId,
+		window,
 		screen->root,
-		0,
-		0,
-		800,
-		600,
-		1,
+		Config::dispX,
+		Config::dispY,
+		(Config::dispWidth == 0) ? screen->width_in_pixels : Config::dispWidth,
+		(Config::dispHeight == 0) ? screen->height_in_pixels : Config::dispHeight,
+		Config::dispBorder,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		screen->root_visual,
 		eventMask,
 		valList
 	);
-	xcb_map_window(connection, windowId);
-	xcb_flush (connection);
+	// Window title
+	xcb_change_property(
+		connection,
+		XCB_PROP_MODE_REPLACE,
+		window,
+		XCB_ATOM_WM_NAME,
+		XCB_ATOM_STRING,
+		8,
+		strlen(Config::dispTitle),
+		Config::dispTitle);
+	xcb_map_window(connection, window);
+	xcb_flush(connection);
 }
+
+BackendXcb::~BackendXcb(){
+	#ifdef USE_VULKAN
+	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+	vkDestroyInstance(vkInstance, nullptr);
+	#endif
+	xcb_disconnect(connection);
+}
+
+#ifdef USE_VULKAN
+void BackendXcb::createSurface(){
+	VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {};
+	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+	surfaceCreateInfo.pNext = NULL;
+	surfaceCreateInfo.flags = 0;
+	surfaceCreateInfo.connection = connection;
+	surfaceCreateInfo.window = window;
+	switch(vkCreateXcbSurfaceKHR(vkInstance, &surfaceCreateInfo, NULL, &vkSurface)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Create display surface] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Create display surface] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+}
+#endif

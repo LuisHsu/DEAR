@@ -1,4 +1,4 @@
-include_directories(.)
+include_directories(. ..)
 
 if(XCB_SUPPORT)
 set(XCB_CPP "Xcb.cpp")

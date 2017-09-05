@@ -4,3 +4,7 @@ BackendDisplay::BackendDisplay(BackendBase::LibType lib):
 {
 
 }
+
+void BackendDisplay::createSurface(){
+	
+}

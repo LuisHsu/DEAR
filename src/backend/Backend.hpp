@@ -6,7 +6,7 @@
 #include <vector>
 
 #ifdef USE_VULKAN
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #endif
 
 #include <Base.hpp>
@@ -21,10 +21,12 @@
 
 namespace Backend{
 	BackendBase* getBackend(BackendBase::LibType lib, BackendBase::WMType wm);
+
 	#ifdef USE_VULKAN
 	void initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBase::WMType &wm);
 	VkPhysicalDevice pickPhyDevice(VkInstance instance, BackendBase::WMType &wm);
 	#endif
+
 	//void initGL();
 }
 

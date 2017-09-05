@@ -5,3 +5,7 @@ BackendWayland::BackendWayland(BackendBase::LibType lib):
 {
 
 }
+
+void BackendWayland::createSurface(){
+	
+}

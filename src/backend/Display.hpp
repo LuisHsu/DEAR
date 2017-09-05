@@ -6,6 +6,11 @@
 class BackendDisplay : public BackendBase {
 public:
 	BackendDisplay(BackendBase::LibType lib = BackendBase::LibType::AUTO_LIB);
+
+	#ifdef USE_VULKAN
+	void createSurface();
+	#endif
+
 private:
 	// run()
 };

@@ -6,7 +6,7 @@ void Backend::initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBa
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "DEAR";
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 59);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
@@ -144,6 +144,7 @@ void Backend::initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBa
 	}else{
 		throw "[Create Backend] No any protocol support and display is unsupported.";
 	}
+	backend->createSurface();
 /*** Physical devices ***/
 	// Find a device
 	backend->vkPhyDevice = pickPhyDevice(backend->vkInstance, wm);
@@ -172,13 +173,13 @@ VkPhysicalDevice Backend::pickPhyDevice(VkInstance instance, BackendBase::WMType
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
 		// DISPLAY_WM must have a display
-		if(wm == BackendBase::WMType::DISPLAY_WM){
+		//if(wm == BackendBase::WMType::DISPLAY_WM){
 			uint32_t displayCount = 0;
 			vkGetPhysicalDeviceDisplayPropertiesKHR(devices[i], &displayCount, nullptr);
 			if(displayCount == 0){
 				continue;
 			}
-		}
+		//}
 		// Device type
 		switch(deviceProperties.deviceType){
 			case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:

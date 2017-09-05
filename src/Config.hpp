@@ -15,6 +15,7 @@ public:
 	static int32_t dispX;
 	static int32_t dispY;
 	static uint32_t dispBorder;
+	static char dispTitle[256];
 };
 
 #endif

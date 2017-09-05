@@ -4,7 +4,7 @@
 #include <vector>
 
 #ifdef USE_VULKAN
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #endif
 
 class BackendBase {
@@ -18,11 +18,14 @@ public:
 #ifdef USE_VULKAN
 	VkInstance vkInstance;
 	VkPhysicalDevice vkPhyDevice;
+	VkSurfaceKHR vkSurface;
 	int graphicsFamily = -1;
 	int presentFamily = -1;
+	virtual void createSurface() = 0;
 #endif
+
 	BackendBase(LibType lib):libType(lib){};
-	~BackendBase();
+	virtual ~BackendBase();
 };
 
 #endif

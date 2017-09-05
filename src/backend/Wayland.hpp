@@ -9,12 +9,13 @@
 class BackendWayland : public BackendBase {
 public:
 	BackendWayland(BackendBase::LibType lib = BackendBase::LibType::AUTO_LIB);
+	~BackendWayland();
 
 	#ifdef USE_VULKAN
 	void createSurface();
 	#endif
 
-	wl_display *display
+	wl_display *display;
 
 private:
 	// run()

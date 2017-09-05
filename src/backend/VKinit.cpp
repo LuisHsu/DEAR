@@ -144,6 +144,7 @@ void Backend::initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBa
 	}else{
 		throw "[Create Backend] No any protocol support and display is unsupported.";
 	}
+	// Surface
 	backend->createSurface();
 /*** Physical devices ***/
 	// Find a device
@@ -173,13 +174,13 @@ VkPhysicalDevice Backend::pickPhyDevice(VkInstance instance, BackendBase::WMType
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
 		// DISPLAY_WM must have a display
-		//if(wm == BackendBase::WMType::DISPLAY_WM){
+		if(wm == BackendBase::WMType::DISPLAY_WM){
 			uint32_t displayCount = 0;
 			vkGetPhysicalDeviceDisplayPropertiesKHR(devices[i], &displayCount, nullptr);
 			if(displayCount == 0){
 				continue;
 			}
-		//}
+		}
 		// Device type
 		switch(deviceProperties.deviceType){
 			case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:

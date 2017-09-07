@@ -9,25 +9,30 @@
 #include <vulkan/vulkan.hpp>
 #endif
 
-#include <Base.hpp>
-#include <Display.hpp>
+class Backend{
+public:
+	enum LibType {AUTO, VULKAN, OPENGL};
+	LibType lib;
 
-#ifdef WAYLAND_SUPPORT
-#include <Wayland.hpp>
-#endif
-#ifdef XCB_SUPPORT
-#include <Xcb.hpp>
-#endif
-
-namespace Backend{
-	BackendBase* getBackend(BackendBase::LibType lib, BackendBase::WMType wm);
+	Backend(LibType lib);
+	~Backend();
 
 	#ifdef USE_VULKAN
-	void initVK(BackendBase* &backend, BackendBase::LibType &lib, BackendBase::WMType &wm);
-	VkPhysicalDevice pickPhyDevice(VkInstance instance, BackendBase::WMType &wm);
+	VkInstance vkInstance;
+	VkPhysicalDevice vkPhyDevice;
+	VkDevice vkDevice;
+	VkDisplayKHR vkDisplay;
+	VkDisplayPropertiesKHR vkDisplayProperties;
+	VkDisplayModeKHR vkDisplayMode;
+	VkSurfaceKHR vkSurface;
+	VkQueue vkGraphicsQueue;
+	VkQueue vkPresentQueue;
+	VkSurfaceFormatKHR vkSurfaceFormat;
+
+	void initVK();
 	#endif
 
 	//void initGL();
-}
+};
 
 #endif

@@ -1,33 +1,25 @@
 #include <Backend.hpp>
 
-BackendBase* Backend::getBackend(BackendBase::LibType lib, BackendBase::WMType wm){
-
-	BackendBase *newBackend = nullptr;
-
+Backend::Backend(LibType lib):
+	lib(lib)
+{
 	// Vulkan
 	#ifdef USE_VULKAN
-	if(lib == BackendBase::LibType::AUTO_LIB || lib == BackendBase::LibType::VULKAN_LIB){
+	if(lib == AUTO || lib == VULKAN){
 		try{
-			initVK(newBackend, lib, wm);
+			initVK();
 		}catch(std::exception e){
-			if(lib == BackendBase::LibType::VULKAN_LIB){
-				throw e;
-			}else{
-				std::cerr << "Vulkan init error: " << e.what() << " Try OpenGL." << std::endl;
-			}
+			std::cerr << "Backend init error: " << e.what() << " Try OpenGL." << std::endl;
 		}
 	}
 	#endif
-
 	// OpenGL
-	#ifdef USE_OpenGL
-	if(lib == BackendBase::LibType::AUTO || lib == BackendBase::LibType::OPENGL){
-		
-	}
-	#endif
-
-	return newBackend;
 }
 
-BackendBase::~BackendBase(){
+Backend::~Backend(){
+	#ifdef USE_VULKAN
+	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+	vkDestroyDevice(vkDevice, nullptr);
+	vkDestroyInstance(vkInstance, nullptr);
+	#endif
 }

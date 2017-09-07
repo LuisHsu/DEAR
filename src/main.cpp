@@ -8,7 +8,7 @@ int main(int argc, char *argv[]){
 		Config::readconf();
 
 		// Init backend
-		BackendBase *backend = Backend::getBackend(BackendBase::LibType::AUTO_LIB, BackendBase::WMType::AUTO_WM);
+		Backend *backend = new Backend(Backend::LibType::AUTO);
 		
 		// Clean
 		delete backend;

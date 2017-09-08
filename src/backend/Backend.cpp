@@ -14,10 +14,14 @@ Backend::Backend(LibType lib):
 	}
 	#endif
 	// OpenGL
+	if(lib == AUTO || lib == OPENGL){
+		initGL();
+	}
 }
 
 Backend::~Backend(){
 	#ifdef USE_VULKAN
+	vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
 	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 	vkDestroyDevice(vkDevice, nullptr);
 	vkDestroyInstance(vkInstance, nullptr);

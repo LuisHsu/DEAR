@@ -5,6 +5,12 @@
 #include <cstring>
 #include <vector>
 
+extern "C"{
+	#include <fcntl.h>
+	#include <xf86drm.h>
+	#include <xf86drmMode.h>
+}
+
 #ifdef USE_VULKAN
 #include <vulkan/vulkan.hpp>
 #endif
@@ -19,20 +25,20 @@ public:
 
 	#ifdef USE_VULKAN
 	VkInstance vkInstance;
-	VkPhysicalDevice vkPhyDevice;
 	VkDevice vkDevice;
-	VkDisplayKHR vkDisplay;
-	VkDisplayPropertiesKHR vkDisplayProperties;
-	VkDisplayModeKHR vkDisplayMode;
 	VkSurfaceKHR vkSurface;
 	VkQueue vkGraphicsQueue;
 	VkQueue vkPresentQueue;
+	VkSwapchainKHR vkSwapChain;
+	VkExtent2D vkDisplayExtent;
 	VkSurfaceFormatKHR vkSurfaceFormat;
-
+	std::vector<VkImage> vkSwapChainImages;
 	void initVK();
 	#endif
 
-	//void initGL();
+	int drmFd;
+	drmModeRes *resources;
+	void initGL();
 };
 
 #endif

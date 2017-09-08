@@ -4,30 +4,16 @@ Desktop Environment for Augmented and virtual Reality
 
 ## Dependency
 
-#### Backend
-
-###### Graphics Library
-
-+ Vulkan
-
-	- libvulkan
-
 + OpenGL
 
-###### Window Manager
++ Wayland-client Wayland-server Wayland-protocol
 
-+ Wayland
++ EGL
 
-+ X Window
++ libdrm
 
-	- XCB
++ GBM
 
-#### Frontend
++ Vulkan [optional]
 
-* Window Manager
-
-	+ Wayland
-
-	+ X Window
-
-		- XCB
++ XCB [optional]

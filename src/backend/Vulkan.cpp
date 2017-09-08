@@ -1,6 +1,11 @@
 #include <Backend.hpp>
 
 void Backend::initVK(){
+	VkPhysicalDevice vkPhyDevice;
+	VkDisplayKHR vkDisplay;
+	VkDisplayPropertiesKHR vkDisplayProperties;
+	VkDisplayModeKHR vkDisplayMode;
+	VkPresentModeKHR vkPresentMode;
 /*** Instance ***/
 	// App info
 	VkApplicationInfo appInfo = {};
@@ -107,6 +112,7 @@ void Backend::initVK(){
 		VkExtent2D visibleRegion = displayModeProperties[i].parameters.visibleRegion;
 		if(vkDisplayProperties.physicalResolution.width == visibleRegion.width && vkDisplayProperties.physicalResolution.height == visibleRegion.height){
 			vkDisplayMode = displayModeProperties[i].displayMode;
+			vkDisplayExtent = visibleRegion;
 			break;
 		}
 	}
@@ -240,5 +246,68 @@ void Backend::initVK(){
 	// Get present mode
 	uint32_t presentModeCount = 0;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhyDevice, vkSurface, &presentModeCount, nullptr);
-	
+	VkPresentModeKHR presentModes[presentModeCount];
+	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhyDevice, vkSurface, &presentModeCount, presentModes);
+	for(uint32_t i = 0; i < presentModeCount; ++i){
+		if(presentModes[i] == VK_PRESENT_MODE_FIFO_KHR){
+			vkPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+			break;
+		}else if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            vkPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        }else if (presentModes[i] != VK_PRESENT_MODE_IMMEDIATE_KHR) {
+            vkPresentMode = presentModes[i];
+        }
+	}
+	// Swapchain capability
+	VkSurfaceCapabilitiesKHR surfaceCapability;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhyDevice, vkSurface, &surfaceCapability);
+	// Create swap chain
+	VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
+	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapChainCreateInfo.surface = vkSurface;
+	swapChainCreateInfo.minImageCount = (surfaceCapability.minImageCount + 1 > surfaceCapability.maxImageCount) ? surfaceCapability.maxImageCount : surfaceCapability.minImageCount + 1;
+	swapChainCreateInfo.imageFormat = vkSurfaceFormat.format;
+	swapChainCreateInfo.imageColorSpace = vkSurfaceFormat.colorSpace;
+	swapChainCreateInfo.imageExtent = vkDisplayExtent;
+	swapChainCreateInfo.imageArrayLayers = 1;
+	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	if (graphicsFamily != presentFamily) {
+		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		swapChainCreateInfo.queueFamilyIndexCount = 2;
+		uint32_t queueFamilyIndices[] = {(uint32_t)graphicsFamily, (uint32_t)presentFamily};
+		swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+	} else {
+		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		swapChainCreateInfo.queueFamilyIndexCount = 0;
+		swapChainCreateInfo.pQueueFamilyIndices = nullptr;
+	}
+	swapChainCreateInfo.preTransform = surfaceCapability.currentTransform;
+	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapChainCreateInfo.presentMode = vkPresentMode;
+	swapChainCreateInfo.clipped = VK_TRUE;
+	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+	switch(vkCreateSwapchainKHR(vkDevice, &swapChainCreateInfo, nullptr, &vkSwapChain)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan swapchain] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan swapchain] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		case VK_ERROR_DEVICE_LOST:
+			throw "[Vulkan swapchain] VK_ERROR_DEVICE_LOST";
+		break;
+		case VK_ERROR_SURFACE_LOST_KHR:
+			throw "[Vulkan swapchain] VK_ERROR_SURFACE_LOST_KHR";
+		break;
+		case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+			throw "[Vulkan swapchain] VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+		break;
+		default:
+		break;
+	}
+	uint32_t swapchainImageCount = 0;
+	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, nullptr);
+	vkSwapChainImages.resize(swapchainImageCount);
+	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, vkSwapChainImages.data());
+	// TODO: Wait driver finished
 }

@@ -1,6 +1,8 @@
-#include <Backend.hpp>
+#include <BackendVK.hpp>
 
-void Backend::initVK(){
+BackendVK::BackendVK():
+	BackendBase(BackendBase::LibType::VULKAN)
+{
 	VkPhysicalDevice vkPhyDevice;
 	VkDisplayKHR vkDisplay;
 	VkDisplayPropertiesKHR vkDisplayProperties;
@@ -309,5 +311,35 @@ void Backend::initVK(){
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, nullptr);
 	vkSwapChainImages.resize(swapchainImageCount);
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, vkSwapChainImages.data());
-	// TODO: Wait driver finished
+/*** Image View ***/
+	vkSwapChainImageViews.resize(swapchainImageCount);
+	for(uint32_t i = 0; i < swapchainImageCount; ++i){
+		VkImageViewCreateInfo imageViewCreateInfo = {};
+		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.image = vkSwapChainImages[i];
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.format = vkSurfaceFormat.format;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &vkSwapChainImageViews[i]);
+	}
+/*** Shader ***/
+
+}
+
+BackendVK::~BackendVK(){
+	for (VkImageView imageView : vkSwapChainImageViews) {
+        vkDestroyImageView(vkDevice, imageView, nullptr);
+    }
+	vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+	vkDestroyDevice(vkDevice, nullptr);
+	vkDestroyInstance(vkInstance, nullptr);
 }

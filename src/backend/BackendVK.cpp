@@ -315,7 +315,7 @@ BackendVK::BackendVK():
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, nullptr);
 	vkSwapChainImages.resize(swapchainImageCount);
 	vkGetSwapchainImagesKHR(vkDevice, vkSwapChain, &swapchainImageCount, vkSwapChainImages.data());
-/*** [Check] Image View ***/
+/*** Image View ***/
 	vkSwapChainImageViews.resize(swapchainImageCount);	
 	for(uint32_t i = 0; i < swapchainImageCount; ++i){
 		VkImageViewCreateInfo imageViewCreateInfo = {};
@@ -334,7 +334,7 @@ BackendVK::BackendVK():
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
 		vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &vkSwapChainImageViews[i]);
 	}
-/*** [Check] Shader ***/
+/*** Shader ***/
 	// Vertex shader
 	vkVertexShader = createShaderModule("vert/BackendVK.vert.spv");
 	VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo = {};
@@ -348,7 +348,7 @@ BackendVK::BackendVK():
 	fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragmentShaderStageCreateInfo.module = vkFragmentShader;
 	fragmentShaderStageCreateInfo.pName = "main";
-/*** [Check] Fixed functions ***/
+/*** Fixed functions ***/
 	// Vertex input
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -439,7 +439,7 @@ BackendVK::BackendVK():
 		default:
 		break;
 	}
-/*** [Check] Render pass ***/
+/*** Render pass ***/
 	// Color attachment
 	VkAttachmentDescription colorAttachment = {};
 	colorAttachment.format = vkSurfaceFormat.format;
@@ -486,7 +486,7 @@ BackendVK::BackendVK():
 		default:
 		break;
 	}
-/*** [Check] Graphics pipeline ***/
+/*** Graphics pipeline ***/
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
@@ -521,7 +521,7 @@ BackendVK::BackendVK():
     vkDestroyShaderModule(vkDevice, vkFragmentShader, nullptr);
 
 
-/*** [Check] Frame buffers ***/
+/*** Frame buffers ***/
 	vkSwapChainFramebuffers.resize(swapchainImageCount);
 	for (size_t i = 0; i < swapchainImageCount; ++i) {
 		VkFramebufferCreateInfo framebufferInfo = {};
@@ -543,7 +543,7 @@ BackendVK::BackendVK():
 			break;
 		}
 	}
-/*** [Check] Command pool ***/
+/*** Command pool ***/
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = graphicsFamily;
@@ -558,7 +558,7 @@ BackendVK::BackendVK():
 		default:
 		break;
 	}
-/*** [Check] Command buffers ***/
+/*** Command buffers ***/
 	vkCommandBuffers.resize(swapchainImageCount);
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -576,7 +576,7 @@ BackendVK::BackendVK():
 		break;
 	}
 
-/*** [Check] Command buffer record ***/
+/*** Command buffer record ***/
 	for(uint32_t i = 0; i < vkCommandBuffers.size(); ++i) {
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -609,7 +609,7 @@ BackendVK::BackendVK():
 			break;
 		}
 	}
-/*** [Check] Create semaphores ***/
+/*** Create semaphores ***/
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	switch(vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphore)){

@@ -43,7 +43,7 @@ add_definitions(-DXCB_SUPPORT)
 add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
 endif(XCB_SUPPORT)
 
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/freg)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/frag)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/vert)
 
 add_subdirectory(src/backend)

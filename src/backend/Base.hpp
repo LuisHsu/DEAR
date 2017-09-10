@@ -7,6 +7,8 @@ public:
 	LibType lib;
 
 	BackendBase(LibType lib);
+	virtual ~BackendBase();
+	virtual void run() = 0;
 };
 
 #endif

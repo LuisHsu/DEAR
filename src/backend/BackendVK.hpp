@@ -4,7 +4,9 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
+#include <fstream>
 #include <vulkan/vulkan.hpp>
+#include <unistd.h>
 
 #include <Base.hpp>
 
@@ -12,6 +14,7 @@ class BackendVK : public BackendBase{
 public:
 	BackendVK();
 	~BackendVK();
+	void run();
 private:
 	VkInstance vkInstance;
 	VkDevice vkDevice;
@@ -19,10 +22,16 @@ private:
 	VkQueue vkGraphicsQueue;
 	VkQueue vkPresentQueue;
 	VkSwapchainKHR vkSwapChain;
-	VkExtent2D vkDisplayExtent;
-	VkSurfaceFormatKHR vkSurfaceFormat;
+	VkRenderPass vkRenderPass;
+	VkPipelineLayout vkPipelineLayout;
+	VkPipeline vkGraphicsPipeline;
+	VkCommandPool vkCommandPool;
+	VkSemaphore vkImageAvailableSemaphore;
+	VkSemaphore vkRenderFinishedSemaphore;
 	std::vector<VkImage> vkSwapChainImages;
 	std::vector<VkImageView> vkSwapChainImageViews;
+	std::vector<VkFramebuffer> vkSwapChainFramebuffers;
+	std::vector<VkCommandBuffer> vkCommandBuffers;
 
 	VkShaderModule createShaderModule(const char *fileName);
 };

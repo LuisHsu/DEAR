@@ -20,3 +20,6 @@ BackendGL::BackendGL():
 		connector = nullptr;
 	}
 }
+void BackendGL::run(){
+
+}

@@ -9,7 +9,10 @@ int main(int argc, char *argv[]){
 
 		// Init backend
 		BackendBase *backend = Backend::getBackend(BackendBase::LibType::AUTO);
-		
+		// Run
+		while(1){
+			backend->run();
+		}
 		// Clean
 		delete backend;
 	}catch(const char *e){

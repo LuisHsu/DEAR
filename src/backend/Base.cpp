@@ -2,3 +2,6 @@
 
 BackendBase::BackendBase(LibType lib):lib(lib){
 }
+
+BackendBase::~BackendBase(){
+}

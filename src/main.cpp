@@ -8,11 +8,7 @@ int main(int argc, char *argv[]){
 		Config::readconf();
 
 		// Init backend
-		BackendBase *backend = Backend::getBackend(BackendBase::LibType::AUTO);
-		// Run
-		while(1){
-			backend->run();
-		}
+		BackendBase *backend = Backend::getBackend(BackendBase::LibType::OPENGL);
 		// Clean
 		delete backend;
 	}catch(const char *e){

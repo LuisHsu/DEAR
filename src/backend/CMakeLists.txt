@@ -1,7 +1,13 @@
 include_directories(. ..)
 
 if(USE_VULKAN)
-set(BACKENDVK "BackendVK.cpp")
+if(XCB_SUPPORT)
+set(BACKENDVK "BackendXcbVK.cpp")
+endif(XCB_SUPPORT)
+set(BACKENDVK
+	${BACKENDVK}
+	BackendDisplayVK.cpp
+)
 set(GLSLANG_VALIDATOR ${CMAKE_CURRENT_LIST_DIR}/../../tools/glslangValidator)
 add_custom_target(backend_shader
 	COMMAND ${GLSLANG_VALIDATOR} -V BackendVK.frag -o ${PROJECT_BINARY_DIR}/frag/BackendVK.frag.spv

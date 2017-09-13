@@ -3,10 +3,12 @@
 
 class BackendBase{
 public:
-	enum LibType {AUTO, VULKAN, OPENGL};
+	enum LibType {AUTO_LIB, VULKAN, OPENGL};
+	enum SurfType {XCB, DISPLAY};
 	LibType lib;
+	SurfType surf;
 
-	BackendBase(LibType lib);
+	BackendBase(LibType lib, SurfType surf);
 	virtual ~BackendBase();
 	virtual void run() = 0;
 };

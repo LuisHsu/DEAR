@@ -1,7 +1,7 @@
 #include <BackendGL.hpp>
 
 BackendGL::BackendGL():
-	BackendBase(BackendBase::LibType::OPENGL)
+	BackendBase(BackendBase::LibType::OPENGL, BackendBase::SurfType::DISPLAY)
 {
 /*** DRM ***/
 	if((drmFd = open("/dev/dri/card0", O_RDWR)) < 0){

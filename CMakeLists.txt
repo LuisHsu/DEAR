@@ -6,6 +6,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror")
 set(CMAKE_DEBUG_POSTFIX "_d")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+find_package(Wayland REQUIRED)
+if(WAYLAND_FOUND)
+include_directories(${WAYLAND_CLIENT_INCLUDE_DIR} ${WAYLAND_SERVER_INCLUDE_DIR})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WAYLAND_CLIENT_LIBRARIES} ${WAYLAND_SERVER_LIBRARIES}")
+endif(WAYLAND_FOUND)
+
+
 find_package(DRM REQUIRED)
 if(DRM_FOUND)
 include_directories(${DRM_INCLUDE_DIRS})
@@ -47,6 +54,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/frag)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/vert)
 
 add_subdirectory(src/backend)
+add_subdirectory(src/greeter)
 include_directories(src src/backend)
 add_executable(dear 
 	src/main.cpp

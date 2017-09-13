@@ -4,7 +4,10 @@
 #include <BackendGL.hpp>
 
 #ifdef USE_VULKAN
-#include <BackendVK.hpp>
+#include <BackendDisplayVK.hpp>
+#ifdef XCB_SUPPORT
+#include <BackendXcbVK.hpp>
+#endif
 #endif
 
 namespace Backend{

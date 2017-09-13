@@ -1,7 +1,7 @@
-#include <BackendVK.hpp>
+#include <BackendDisplayVK.hpp>
 
-BackendVK::BackendVK():
-	BackendBase(BackendBase::LibType::VULKAN)
+BackendDisplayVK::BackendDisplayVK():
+	BackendBase(BackendBase::LibType::VULKAN, BackendBase::SurfType::DISPLAY)
 {
 	VkPhysicalDevice vkPhyDevice;
 	VkDisplayKHR vkDisplay;
@@ -53,7 +53,6 @@ BackendVK::BackendVK():
 			throw "[Vulkan instance] VK_ERROR_INCOMPATIBLE_DRIVER";
 		break;
 		default:
-			lib = VULKAN;
 		break;
 	}
 /*** Physical device ***/
@@ -634,7 +633,7 @@ BackendVK::BackendVK():
 	}
 }
 
-BackendVK::~BackendVK(){
+BackendDisplayVK::~BackendDisplayVK(){
 	vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
     vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
 	vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
@@ -652,7 +651,7 @@ BackendVK::~BackendVK(){
 	vkDestroyInstance(vkInstance, nullptr);
 }
 
-VkShaderModule BackendVK::createShaderModule(const char *fileName){
+VkShaderModule BackendDisplayVK::createShaderModule(const char *fileName){
 	// Read code
 	std::ifstream fin(fileName, std::ios::ate | std::ios::binary);
 	if (!fin.is_open()) {
@@ -685,7 +684,7 @@ VkShaderModule BackendVK::createShaderModule(const char *fileName){
 	return ret;
 }
 
-void BackendVK::run(){
+void BackendDisplayVK::run(){
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(vkDevice, vkSwapChain, std::numeric_limits<uint64_t>::max(), vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	// Submit command buffer

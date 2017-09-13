@@ -1,21 +1,27 @@
-#ifndef BACKENDVK_DEF
-#define BACKENDVK_DEF
+#ifndef BACKENDXCBVK_DEF
+#define BACKENDXCBVK_DEF
 
 #include <iostream>
 #include <cstring>
 #include <vector>
 #include <fstream>
 #include <vulkan/vulkan.hpp>
+extern "C"{
+#include <xcb/xcb.h>
 #include <unistd.h>
+}
 
 #include <Base.hpp>
 
-class BackendVK : public BackendBase{
+class BackendXcbVK : public BackendBase{
 public:
-	BackendVK();
-	~BackendVK();
+	BackendXcbVK();
+	~BackendXcbVK();
 	void run();
 private:
+	xcb_connection_t *xcbConnection = nullptr;
+	xcb_window_t xcbWindow;
+
 	VkInstance vkInstance;
 	VkDevice vkDevice;
 	VkSurfaceKHR vkSurface;

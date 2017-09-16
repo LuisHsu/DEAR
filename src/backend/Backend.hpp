@@ -1,7 +1,10 @@
 #ifndef BACKEND_DEF
 #define BACKEND_DEF
 
-#include <BackendGL.hpp>
+#include <BackendDisplayGL.hpp>
+#ifdef XCB_SUPPORT
+#include <BackendXcbGL.hpp>
+#endif
 
 #ifdef USE_VULKAN
 #include <BackendDisplayVK.hpp>

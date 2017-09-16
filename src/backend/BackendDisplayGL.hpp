@@ -1,5 +1,5 @@
-#ifndef BACKENDGL_DEF
-#define BACKENDGL_DEF
+#ifndef BACKENDDISPLAYGL_DEF
+#define BACKENDDISPLAYGL_DEF
 
 extern "C"{
 	#include <fcntl.h>
@@ -9,9 +9,9 @@ extern "C"{
 
 #include <Base.hpp>
 
-class BackendGL : public BackendBase{
+class BackendDisplayGL : public BackendBase{
 public:
-	BackendGL();
+	BackendDisplayGL();
 	void run();
 
 private:

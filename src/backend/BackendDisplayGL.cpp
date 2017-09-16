@@ -1,6 +1,6 @@
-#include <BackendGL.hpp>
+#include <BackendDisplayGL.hpp>
 
-BackendGL::BackendGL():
+BackendDisplayGL::BackendDisplayGL():
 	BackendBase(BackendBase::LibType::OPENGL, BackendBase::SurfType::DISPLAY)
 {
 /*** DRM ***/
@@ -20,6 +20,6 @@ BackendGL::BackendGL():
 		connector = nullptr;
 	}
 }
-void BackendGL::run(){
+void BackendDisplayGL::run(){
 
 }

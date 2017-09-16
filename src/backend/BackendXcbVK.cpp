@@ -214,10 +214,9 @@ BackendXcbVK::BackendXcbVK():
 	logicalDeviceCreateInfo.queueCreateInfoCount = 2;
 	logicalDeviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 	logicalDeviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-	logicalDeviceCreateInfo.enabledExtensionCount = 2;
+	logicalDeviceCreateInfo.enabledExtensionCount = 1;
 	const char *devExtensionNames[logicalDeviceCreateInfo.enabledExtensionCount];
 	devExtensionNames[0] = "VK_KHR_swapchain";
-	devExtensionNames[1] = "VK_KHR_display_swapchain";
 	logicalDeviceCreateInfo.ppEnabledExtensionNames = devExtensionNames;
 	switch(vkCreateDevice(vkPhyDevice, &logicalDeviceCreateInfo, nullptr, &vkDevice)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:

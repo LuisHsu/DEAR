@@ -2,7 +2,6 @@
 
 BackendBase *Backend::getBackend(BackendBase::LibType lib){
 	BackendBase *ret = nullptr;
-	BackendBase::SurfType surfType = BackendBase::SurfType::DISPLAY;
 	// Vulkan
 	#ifdef USE_VULKAN
 	if(lib == BackendBase::LibType::AUTO_LIB || lib == BackendBase::LibType::VULKAN){
@@ -36,8 +35,33 @@ BackendBase *Backend::getBackend(BackendBase::LibType lib){
 	#endif
 	// OpenGL
 	if(!ret){
-		ret = new BackendGL();
-		lib = BackendBase::LibType::OPENGL;
+		#ifdef XCB_SUPPORT
+		try{
+			ret = new BackendXcbGL();
+		}catch(std::exception e){
+			std::cerr << "Backend OpenGL XCB init error: " << e.what() << ". Try display." << std::endl;
+			delete ret;
+			ret = nullptr;
+		}catch(const char *e){
+			std::cerr << "Backend OpenGL XCB init error: " << e << ". Try display." << std::endl;
+			delete ret;
+			ret = nullptr;
+		}
+		#endif
+		if(!ret){
+			try{
+				ret = new BackendDisplayGL();
+				lib = BackendBase::LibType::OPENGL;
+			}catch(std::exception e){
+				delete ret;
+				ret = nullptr;
+				throw "No supported graphics library.";
+			}catch(const char *e){
+				delete ret;
+				ret = nullptr;
+				throw "No supported graphics library.";
+			}
+		}
 	}
 	return ret;
 }

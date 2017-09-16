@@ -16,11 +16,16 @@ add_custom_target(backend_shader
 )
 endif(USE_VULKAN)
 
+if(XCB_SUPPORT)
+set(BACKENDXCBGL "BackendXcbGL.cpp")
+endif(XCB_SUPPORT)
+
 add_library(dear_Backend
 	Backend.cpp
 	Base.cpp
-	BackendGL.cpp
+	BackendDisplayGL.cpp
 	${BACKENDVK}
+	${BACKENDXCBGL}
 )
 
 if(USE_VULKAN)

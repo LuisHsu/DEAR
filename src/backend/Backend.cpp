@@ -10,11 +10,9 @@ BackendBase *Backend::getBackend(BackendBase::LibType lib){
 			ret = new BackendXcbVK();
 		}catch(std::exception e){
 			std::cerr << "Backend Vulkan XCB init error: " << e.what() << ". Try display." << std::endl;
-			delete ret;
 			ret = nullptr;
 		}catch(const char *e){
 			std::cerr << "Backend Vulkan XCB init error: " << e << ". Try display." << std::endl;
-			delete ret;
 			ret = nullptr;
 		}
 		#endif
@@ -23,11 +21,9 @@ BackendBase *Backend::getBackend(BackendBase::LibType lib){
 				ret = new BackendDisplayVK();
 			}catch(std::exception e){
 				std::cerr << "Backend Vulkan display init error: " << e.what() << ". Try OpenGL." << std::endl;
-				delete ret;
 				ret = nullptr;
 			}catch(const char *e){
 				std::cerr << "Backend Vulkan display init error: " << e << ". Try OpenGL." << std::endl;
-				delete ret;
 				ret = nullptr;
 			}
 		}
@@ -40,11 +36,9 @@ BackendBase *Backend::getBackend(BackendBase::LibType lib){
 			ret = new BackendXcbGL();
 		}catch(std::exception e){
 			std::cerr << "Backend OpenGL XCB init error: " << e.what() << ". Try display." << std::endl;
-			delete ret;
 			ret = nullptr;
 		}catch(const char *e){
 			std::cerr << "Backend OpenGL XCB init error: " << e << ". Try display." << std::endl;
-			delete ret;
 			ret = nullptr;
 		}
 		#endif
@@ -53,11 +47,9 @@ BackendBase *Backend::getBackend(BackendBase::LibType lib){
 				ret = new BackendDisplayGL();
 				lib = BackendBase::LibType::OPENGL;
 			}catch(std::exception e){
-				delete ret;
 				ret = nullptr;
 				throw "No supported graphics library.";
 			}catch(const char *e){
-				delete ret;
 				ret = nullptr;
 				throw "No supported graphics library.";
 			}

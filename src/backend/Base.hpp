@@ -1,6 +1,8 @@
 #ifndef BACKEND_BASE_DEF
 #define BACKEND_BASE_DEF
 
+#include <iostream>
+
 class BackendBase{
 public:
 	enum LibType {AUTO_LIB, VULKAN, OPENGL};
@@ -10,7 +12,7 @@ public:
 
 	BackendBase(LibType lib, SurfType surf);
 	virtual ~BackendBase();
-	virtual void run() = 0;
+	virtual void paint() = 0;
 };
 
 #endif

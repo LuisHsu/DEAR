@@ -9,21 +9,27 @@ BackendXcbVK::BackendXcbVK():
 	xcbConnection = xcb_connect(nullptr, nullptr);
 	switch(xcb_connection_has_error(xcbConnection)){
 		case XCB_CONN_ERROR:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Socket errors, pipe errors or other stream errors.";
 		break;
 		case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Extension not supported.";
 		break;
 		case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Memory not available.";
 		break;
 		case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Exceeding request length that server accepts.";
 		break;
 		case XCB_CONN_CLOSED_PARSE_ERR:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Error during parsing display string.";
 		break;
 		case XCB_CONN_CLOSED_INVALID_SCREEN:
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan XCB connect] Server does not have a screen matching the display.";
 		break;
 		default:
@@ -91,21 +97,33 @@ BackendXcbVK::BackendXcbVK():
 	// Create instance
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		case VK_ERROR_INITIALIZATION_FAILED:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_INITIALIZATION_FAILED";
 		break;
 		case VK_ERROR_LAYER_NOT_PRESENT:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_LAYER_NOT_PRESENT";
 		break;
 		case VK_ERROR_EXTENSION_NOT_PRESENT:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_EXTENSION_NOT_PRESENT";
 		break;
 		case VK_ERROR_INCOMPATIBLE_DRIVER:
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan instance] VK_ERROR_INCOMPATIBLE_DRIVER";
 		break;
 		default:
@@ -151,6 +169,9 @@ BackendXcbVK::BackendXcbVK():
 	}
 	// Throw error if no device
 	if(bestDevice == -1){
+		vkDestroyInstance(vkInstance, nullptr);	
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 		throw "[Vulkan physical device] No suitable device.";
 	}
 /*** Surface ***/
@@ -164,9 +185,17 @@ BackendXcbVK::BackendXcbVK():
 	surfaceCreateInfo.window = xcbWindow;
 	switch(vkCreateXcbSurfaceKHR(vkInstance, &surfaceCreateInfo, nullptr, &vkSurface)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan surface] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan surface] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -193,6 +222,10 @@ BackendXcbVK::BackendXcbVK():
 		}
 	}
 	if(graphicsFamily < 0 || presentFamily < 0){
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 		throw "[Vulkan queue family] No suitable queue families.";
 	}
 /*** Logical device ***/
@@ -220,24 +253,59 @@ BackendXcbVK::BackendXcbVK():
 	logicalDeviceCreateInfo.ppEnabledExtensionNames = devExtensionNames;
 	switch(vkCreateDevice(vkPhyDevice, &logicalDeviceCreateInfo, nullptr, &vkDevice)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		case VK_ERROR_INITIALIZATION_FAILED:
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_INITIALIZATION_FAILED";
 		break;
 		case VK_ERROR_EXTENSION_NOT_PRESENT:
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_EXTENSION_NOT_PRESENT";
 		break;
 		case VK_ERROR_FEATURE_NOT_PRESENT:
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_FEATURE_NOT_PRESENT";
 		break;
 		case VK_ERROR_TOO_MANY_OBJECTS:
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_TOO_MANY_OBJECTS";
 		break;
 		case VK_ERROR_DEVICE_LOST:
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan device] VK_ERROR_DEVICE_LOST";
 		break;
 		default:
@@ -312,18 +380,48 @@ BackendXcbVK::BackendXcbVK():
 	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 	switch(vkCreateSwapchainKHR(vkDevice, &swapChainCreateInfo, nullptr, &vkSwapChain)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan swapchain] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan swapchain] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		case VK_ERROR_DEVICE_LOST:
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan swapchain] VK_ERROR_DEVICE_LOST";
 		break;
 		case VK_ERROR_SURFACE_LOST_KHR:
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan swapchain] VK_ERROR_SURFACE_LOST_KHR";
 		break;
 		case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan swapchain] VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
 		break;
 		default:
@@ -350,7 +448,16 @@ BackendXcbVK::BackendXcbVK():
 		imageViewCreateInfo.subresourceRange.levelCount = 1;
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &vkSwapChainImageViews[i]);
+		if(vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &vkSwapChainImageViews[i])!= VK_SUCCESS){
+			vkDestroyImageView(vkDevice, vkSwapChainImageViews[i], nullptr);
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
+			throw "[Vulkan image view] Error create image view.";
+		}
 	}
 /*** Shader ***/
 	// Vertex shader
@@ -449,9 +556,29 @@ BackendXcbVK::BackendXcbVK():
 	pipelineLayoutInfo.pPushConstantRanges = 0;
 	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -496,9 +623,31 @@ BackendXcbVK::BackendXcbVK():
 	renderPassInfo.pDependencies = &dependency;
 	switch(vkCreateRenderPass(vkDevice, &renderPassInfo, nullptr, &vkRenderPass)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan render pass] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 			throw "[Vulkan render pass] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -524,12 +673,45 @@ BackendXcbVK::BackendXcbVK():
 	pipelineInfo.basePipelineIndex = -1;
 	switch(vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan pipeline] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan pipeline] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		case VK_ERROR_INVALID_SHADER_NV:
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan pipeline] VK_ERROR_INVALID_SHADER_NV";
 		break;
 		default:
@@ -552,9 +734,33 @@ BackendXcbVK::BackendXcbVK():
 		framebufferInfo.layers = 1;
 		switch(vkCreateFramebuffer(vkDevice, &framebufferInfo, nullptr, &vkSwapChainFramebuffers[i])){
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyFramebuffer(vkDevice, vkSwapChainFramebuffers[i], nullptr);
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 				throw "[Vulkan framebuffer] VK_ERROR_OUT_OF_HOST_MEMORY";
 			break;
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyFramebuffer(vkDevice, vkSwapChainFramebuffers[i], nullptr);
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 				throw "[Vulkan framebuffer] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 			break;
 			default:
@@ -568,9 +774,39 @@ BackendXcbVK::BackendXcbVK():
 	poolInfo.flags = 0;
 	switch(vkCreateCommandPool(vkDevice, &poolInfo, nullptr, &vkCommandPool)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan command pool] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan command pool] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -585,9 +821,39 @@ BackendXcbVK::BackendXcbVK():
 	allocInfo.commandBufferCount = swapchainImageCount;
 	switch(vkAllocateCommandBuffers(vkDevice, &allocInfo, vkCommandBuffers.data())){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -618,9 +884,39 @@ BackendXcbVK::BackendXcbVK():
 		vkCmdEndRenderPass(vkCommandBuffers[i]);
 		switch(vkEndCommandBuffer(vkCommandBuffers[i])){
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+			}
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_HOST_MEMORY";
 			break;
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+			}
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
 				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 			break;
 			default:
@@ -632,9 +928,41 @@ BackendXcbVK::BackendXcbVK():
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	switch(vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkImageAvailableSemaphore)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan image available semaphore] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan image available semaphore] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -642,9 +970,43 @@ BackendXcbVK::BackendXcbVK():
 	}
 	switch(vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &vkRenderFinishedSemaphore)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
+		vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan render finished semaphore] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
+		vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
+		vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+		for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+		}
+		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+		for (VkImageView imageView : vkSwapChainImageViews) {
+			vkDestroyImageView(vkDevice, imageView, nullptr);
+		}
+		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+		vkDestroyDevice(vkDevice, nullptr);
+		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+		vkDestroyInstance(vkInstance, nullptr);
+		xcb_destroy_window(xcbConnection, xcbWindow);
+		xcb_disconnect(xcbConnection);
 			throw "[Vulkan render finished semaphore] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
@@ -653,22 +1015,23 @@ BackendXcbVK::BackendXcbVK():
 }
 
 BackendXcbVK::~BackendXcbVK(){
+	vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(vkDevice, vkImageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(vkDevice, vkRenderFinishedSemaphore, nullptr);
 	vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
 	for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
-    }
-	vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+	}
 	vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+	vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 	for (VkImageView imageView : vkSwapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
 	vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 	vkDestroyDevice(vkDevice, nullptr);
+	vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 	vkDestroyInstance(vkInstance, nullptr);
 
+	xcb_destroy_window(xcbConnection, xcbWindow);
 	xcb_disconnect(xcbConnection);
 }
 
@@ -705,7 +1068,7 @@ VkShaderModule BackendXcbVK::createShaderModule(const char *fileName){
 	return ret;
 }
 
-void BackendXcbVK::run(){
+void BackendXcbVK::paint(){
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(vkDevice, vkSwapChain, std::numeric_limits<uint64_t>::max(), vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	// Submit command buffer

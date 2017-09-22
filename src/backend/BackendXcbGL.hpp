@@ -9,17 +9,22 @@ extern "C"{
     #include <GL/gl.h>
 }
 
+#include <cstring>
 #include <Base.hpp>
 
 class BackendXcbGL : public BackendBase{
 public:
 	BackendXcbGL();
 	~BackendXcbGL();
-	void run();
+	void paint();
 
 private:
 	Display *xlibDisplay;
 	xcb_connection_t *xcbConnection = nullptr;
+	xcb_window_t xcbWindow;
+	GLXFBConfig glxFbConfig;
+	GLXContext glxContext;
+	GLXWindow glxWindow;
 };
 
 #endif

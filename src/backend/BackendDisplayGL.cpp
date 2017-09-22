@@ -20,6 +20,6 @@ BackendDisplayGL::BackendDisplayGL():
 		connector = nullptr;
 	}
 }
-void BackendDisplayGL::run(){
+void BackendDisplayGL::paint(){
 
 }

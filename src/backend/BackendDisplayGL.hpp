@@ -12,7 +12,7 @@ extern "C"{
 class BackendDisplayGL : public BackendBase{
 public:
 	BackendDisplayGL();
-	void run();
+	void paint();
 
 private:
 	int drmFd;

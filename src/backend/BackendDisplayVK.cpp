@@ -684,7 +684,7 @@ VkShaderModule BackendDisplayVK::createShaderModule(const char *fileName){
 	return ret;
 }
 
-void BackendDisplayVK::run(){
+void BackendDisplayVK::paint(){
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(vkDevice, vkSwapChain, std::numeric_limits<uint64_t>::max(), vkImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	// Submit command buffer

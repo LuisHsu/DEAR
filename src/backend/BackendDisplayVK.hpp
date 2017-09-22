@@ -14,7 +14,7 @@ class BackendDisplayVK : public BackendBase{
 public:
 	BackendDisplayVK();
 	~BackendDisplayVK();
-	void run();
+	void paint();
 private:
 	VkInstance vkInstance;
 	VkDevice vkDevice;

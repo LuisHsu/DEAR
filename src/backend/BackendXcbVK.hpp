@@ -17,7 +17,7 @@ class BackendXcbVK : public BackendBase{
 public:
 	BackendXcbVK();
 	~BackendXcbVK();
-	void run();
+	void paint();
 private:
 	xcb_connection_t *xcbConnection = nullptr;
 	xcb_window_t xcbWindow;

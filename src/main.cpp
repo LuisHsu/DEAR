@@ -11,7 +11,7 @@ int main(int argc, char *argv[]){
 		BackendBase *backend = Backend::getBackend(BackendBase::LibType::AUTO_LIB);
 		char c;
 		do{
-			backend->run();
+			backend->paint();
 			std::cin >> c;
 		}while(c != 'q');
 		// Clean

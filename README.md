@@ -4,15 +4,9 @@ Desktop Environment for Augmented and virtual Reality
 
 ## Dependency
 
-+ OpenGL
-
 + Wayland-client Wayland-server Wayland-protocol
 
-+ EGL
-
-+ libdrm
-
-+ GBM
++ libevent
 
 + Vulkan [optional]
 

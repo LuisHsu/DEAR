@@ -1,6 +1,5 @@
 include_directories(. ..)
 
-if(USE_VULKAN)
 if(XCB_SUPPORT)
 set(BACKENDVK "BackendXcbVK.cpp")
 endif(XCB_SUPPORT)
@@ -14,22 +13,14 @@ add_custom_target(backend_shader
 	COMMAND ${GLSLANG_VALIDATOR} -V BackendVK.vert -o ${PROJECT_BINARY_DIR}/vert/BackendVK.vert.spv
 	WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
-endif(USE_VULKAN)
-
-if(XCB_SUPPORT)
-set(BACKENDXCBGL "BackendXcbGL.cpp")
-endif(XCB_SUPPORT)
-
-add_library(dear_Backend
+add_executable(dearDM
+	main.cpp
+	AreaNode.cpp
+	Config.cpp
 	Backend.cpp
-	Base.cpp
-	BackendDisplayGL.cpp
+	BackendBase.cpp
 	${BACKENDVK}
-	${BACKENDXCBGL}
 )
-
-if(USE_VULKAN)
-add_dependencies(dear_Backend
+add_dependencies(dearDM
 	backend_shader
 )
-endif(USE_VULKAN)

@@ -1,21 +1,27 @@
-#ifndef BACKENDISPLAYVK_DEF
-#define BACKENDISPLAYVK_DEF
+#ifndef BACKENDXCBVK_DEF
+#define BACKENDXCBVK_DEF
 
 #include <iostream>
 #include <cstring>
 #include <vector>
 #include <fstream>
 #include <vulkan/vulkan.hpp>
+extern "C"{
+#include <xcb/xcb.h>
 #include <unistd.h>
+}
 
-#include <Base.hpp>
+#include <BackendBase.hpp>
 
-class BackendDisplayVK : public BackendBase{
+class BackendXcbVK : public BackendBase{
 public:
-	BackendDisplayVK();
-	~BackendDisplayVK();
+	BackendXcbVK();
+	~BackendXcbVK();
 	void paint();
 private:
+	xcb_connection_t *xcbConnection = nullptr;
+	xcb_window_t xcbWindow;
+
 	VkInstance vkInstance;
 	VkDevice vkDevice;
 	VkSurfaceKHR vkSurface;

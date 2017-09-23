@@ -1,7 +1,7 @@
 #include <BackendXcbVK.hpp>
 
 BackendXcbVK::BackendXcbVK():
-	BackendBase(BackendBase::LibType::VULKAN, BackendBase::SurfType::XCB)
+	BackendBase(BackendBase::SurfType::XCB)
 {
 /*== XCB ==*/
 	xcb_screen_t *xcbScreen = nullptr;

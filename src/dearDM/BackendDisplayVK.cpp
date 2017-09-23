@@ -1,7 +1,7 @@
 #include <BackendDisplayVK.hpp>
 
 BackendDisplayVK::BackendDisplayVK():
-	BackendBase(BackendBase::LibType::VULKAN, BackendBase::SurfType::DISPLAY)
+	BackendBase(BackendBase::SurfType::DISPLAY)
 {
 	VkPhysicalDevice vkPhyDevice;
 	VkDisplayKHR vkDisplay;

@@ -1,19 +1,16 @@
 #include <iostream>
-#include <backend/Backend.hpp>
+#include <Backend.hpp>
+#include <AreaNode.hpp>
 #include <Config.hpp>
 
 int main(int argc, char *argv[]){
 	try{
 		// Read config
 		Config::readconf();
-
 		// Init backend
-		BackendBase *backend = Backend::getBackend(BackendBase::LibType::AUTO_LIB);
-		char c;
-		do{
-			backend->paint();
-			std::cin >> c;
-		}while(c != 'q');
+		BackendBase *backend = Backend::getBackend();
+		// Create greeter node
+		AreaNode greeter("/tmp/dear_greeter");
 		// Clean
 		delete backend;
 	}catch(const char *e){

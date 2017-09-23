@@ -6,6 +6,8 @@ extern "C"{
 	#include <sys/socket.h>
 	#include <sys/un.h>
 	#include <unistd.h>
+	#include <event2/event.h> 
+	#include <event2/bufferevent.h>
 }
 
 #include <cstring>
@@ -17,12 +19,14 @@ class AreaNode{
 public:
 	AreaNode(const char *path);
 	~AreaNode();
-	void run();
 private:
-	int socketFd;
+	evutil_socket_t socketFd;
 	struct sockaddr_un serverAddr;
 	struct sockaddr_un clientAddr;
-	ssize_t sendMsg(IPCMessage *message);
+	IPCMessageQueue *messageQueue = nullptr;
+	struct event_base *eventBase;
+	static void socketReceive(evutil_socket_t fd, short event, void *arg);
+	static void socketError(struct bufferevent *bev, short event, void *arg);
 };
 
 #endif

@@ -6,7 +6,7 @@ Desktop Environment for Augmented and virtual Reality
 
 + Wayland-client Wayland-server Wayland-protocol
 
-+ libevent
++ libevent2
 
 + Vulkan [optional]
 

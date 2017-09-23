@@ -17,7 +17,7 @@ typedef void (*AreaServerHandler)(IPCMessage *);
 
 class AreaServer{
 public:
-	AreaServer();
+	AreaServer(const char *path);
 	~AreaServer();
 	void setHandler(AreaServerHandler handler);
 	void start();

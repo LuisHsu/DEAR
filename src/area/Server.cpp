@@ -1,39 +1,43 @@
 #include <Server.hpp>
 
-GreeterServer::GreeterServer(){
+AreaServer::AreaServer(const char *path){
 	// Create socket
 	listenFd = socket(AF_UNIX, SOCK_STREAM, 0);
 	// Fill address
 	listenAddr.sun_family = AF_UNIX;
-	strcpy(listenAddr.sun_path, "/tmp/dear_greeter");
+	strcpy(listenAddr.sun_path, path);
 	// Unlink
 	unlink(listenAddr.sun_path);
 	// Bind
 	if(bind(listenFd, (struct sockaddr *)&listenAddr, sizeof(listenAddr)) < 0){
 		close(listenFd);
-		throw "[Greeter server] Can't bind socket.";
+		throw "[Area server] Can't bind socket.";
 	}
 }
 
-GreeterServer::~GreeterServer(){
+AreaServer::~AreaServer(){
 	if(clientFd >= 0){
 		close(clientFd);
 	}
 }
 
-void GreeterServer::startGreeter(){
+void AreaServer::start(){
 	// Listen
 	if(listen(listenFd, 5) < 0){
 		close(listenFd);
-		throw "[Greeter server] Can't listen server.";
+		throw "[Area server] Can't listen server.";
 	}
 	// Accept
 	clientFd = accept(listenFd, (struct sockaddr *)&clientAddr, &clientAddrlen);
 	if(clientFd < 0){
 		std::cerr << strerror(errno) << std::endl;
 		close(listenFd);
-		throw "[Greeter server] Error accept incoming client.";
+		throw "[Area server] Error accept incoming client.";
 	}
+	IPCMessage msg;
+	msg.type = IPC_Connect;
+	msg.length = sizeof(msg);
+	send(clientFd, &msg, sizeof(msg), 0);
 	// Close listen file descripter
 	close(listenFd);
 	// Receive message
@@ -47,13 +51,15 @@ void GreeterServer::startGreeter(){
 		while(received < header.length){
 			int curRecv = recv(clientFd, buffer.data() + received, header.length - received, 0);
 			if(curRecv <= 0){
-				std::cerr << "[Greeter server] Abort receiving from backend." << std::endl;
+				std::cerr << "[Area server] Abort receiving from backend." << std::endl;
 				break;
 			}
 			received += curRecv;
 		}
 		if(received == header.length){
-			(*messageHandler)(message);
+			//(*messageHandler)(message);
+			send(clientFd, message, received, 0);
+			std::cout << received << std::endl;
 		}
 	}
 	// Clean

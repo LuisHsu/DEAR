@@ -19,6 +19,7 @@ add_executable(dearDM
 	Config.cpp
 	Backend.cpp
 	BackendBase.cpp
+	../IPCMessage.cpp
 	${BACKENDVK}
 )
 add_dependencies(dearDM

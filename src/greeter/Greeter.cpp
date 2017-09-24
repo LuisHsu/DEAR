@@ -8,6 +8,9 @@ Greeter::~Greeter(){
 	vkDestroyInstance(vkInstance, nullptr);
 }
 void Greeter::initVulkan(IPCMessage *message){
+	IPCConnectMessage *connectMessage = (IPCConnectMessage *)message;
+	vkImageExtent = connectMessage->extent;
+	vkImageFormat = connectMessage->format;
 	VkPhysicalDevice vkPhyDevice;
 /*** Instance ***/
 	// App info
@@ -169,12 +172,35 @@ void Greeter::initVulkan(IPCMessage *message){
 	imageCreateInfo.pNext = &externalImageCreateInfo;
 	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	
+	imageCreateInfo.format = vkImageFormat;
+	imageCreateInfo.extent.width = vkImageExtent.width;
+	imageCreateInfo.extent.height = vkImageExtent.height;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.queueFamilyIndexCount = 0;
+	imageCreateInfo.pQueueFamilyIndices = nullptr;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	switch(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &vkPresentImage)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan create image] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan create image] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+
 }
 void Greeter::handleMessage(IPCMessage *message){
 	switch(message->type){
 		case IPC_Connect:
-			std::cout << "Got" << std::endl;
+			initVulkan(message);
 		break;
 		default:
 		break;

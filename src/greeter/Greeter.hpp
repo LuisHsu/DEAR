@@ -15,6 +15,8 @@ private:
 	VkDevice vkDevice;
 	VkQueue vkGraphicsQueue;
 	VkImage vkPresentImage;
+	VkFormat vkImageFormat;
+	VkExtent2D vkImageExtent;
 	void handleMessage(IPCMessage *message);
 	void initVulkan(IPCMessage *message);
 };

@@ -72,8 +72,6 @@ BackendXcbVK::BackendXcbVK():
 	VkPresentModeKHR vkPresentMode;
 	VkShaderModule vkVertexShader;
 	VkShaderModule vkFragmentShader;
-	VkExtent2D vkDisplayExtent;
-	VkSurfaceFormatKHR vkSurfaceFormat;
 /*** Instance ***/
 	// App info
 	VkApplicationInfo appInfo = {};

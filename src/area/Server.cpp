@@ -16,34 +16,58 @@ AreaServer::AreaServer(const char *path){
 }
 
 AreaServer::~AreaServer(){
-	if(clientFd >= 0){
-		close(clientFd);
+	if(listenFd >= 0){
+		close(listenFd);
 	}
 }
 
 void AreaServer::start(){
+	// Set event base
+	evutil_make_socket_nonblocking(listenFd);
+	eventBase = event_base_new();
+	if(eventBase == nullptr){
+		std::cerr << strerror(errno) << std::endl;
+		close(listenFd);
+		throw "[Area server] Can't create event base.";
+	}
+	struct event *acceptEvent = event_new(eventBase, listenFd, EV_READ|EV_PERSIST, socketAccept, this);
+	event_add(acceptEvent, nullptr);
 	// Listen
-	if(listen(listenFd, 5) < 0){
+	if(listen(listenFd, 10) < 0){
 		close(listenFd);
 		throw "[Area server] Can't listen server.";
 	}
+	event_base_dispatch(eventBase);
+}
+
+void AreaServer::socketAccept(evutil_socket_t listenFd, short event, void *arg){
+	AreaServer *server = (AreaServer *)arg;
 	// Accept
-	clientFd = accept(listenFd, (struct sockaddr *)&clientAddr, &clientAddrlen);
-	if(clientFd < 0){
-		std::cerr << strerror(errno) << std::endl;
-		close(listenFd);
-		throw "[Area server] Error accept incoming client.";
+	server->clientFd = accept(listenFd, (struct sockaddr *)&(server->clientAddr), &(server->clientAddrlen));
+	if(server->clientFd >= 0){
+		// Add new event
+		struct event *receiveEvent = event_new(server->eventBase, server->clientFd, EV_READ|EV_PERSIST, socketReceive, nullptr);
+		AreaSocketReceiveArg *receiveArg = new AreaSocketReceiveArg;
+		receiveArg->areaServer = server;
+		receiveArg->receiveEvent = receiveEvent;
+		event_assign(receiveEvent, server->eventBase, server->clientFd, EV_READ|EV_PERSIST, socketReceive, receiveArg);
+		event_add(receiveEvent, nullptr);
+		// Send connect message
+		IPCMessage connectMessage;
+		connectMessage.type = IPC_Connect;
+		connectMessage.length = sizeof(connectMessage);
+		if(send(server->clientFd, &connectMessage, connectMessage.length, 0) < 0){
+			close(server->clientFd);
+			throw "[Area server] Can't send connect message.";
+		}
 	}
-	IPCMessage msg;
-	msg.type = IPC_Connect;
-	msg.length = sizeof(msg);
-	send(clientFd, &msg, sizeof(msg), 0);
-	// Close listen file descripter
-	close(listenFd);
-	// Receive message
+}
+
+void AreaServer::socketReceive(evutil_socket_t clientFd, short event, void *arg){
+	AreaSocketReceiveArg *receiveArg = (AreaSocketReceiveArg *)arg;
 	IPCMessage header;
 	std::vector<char> buffer;
-	while(recv(clientFd, &header, sizeof(header), 0) > 0){
+	if(recv(clientFd, &header, sizeof(header), 0) > 0){
 		buffer.resize(header.length);
 		IPCMessage *message = (IPCMessage *)buffer.data();
 		*message = header;
@@ -57,11 +81,16 @@ void AreaServer::start(){
 			received += curRecv;
 		}
 		if(received == header.length){
-			//(*messageHandler)(message);
-			send(clientFd, message, received, 0);
-			std::cout << received << std::endl;
+			receiveArg->areaServer->messageHandler->handleMessage(message);
 		}
+	}else{
+		event_del(receiveArg->receiveEvent);
+		event_free(receiveArg->receiveEvent);
+		delete receiveArg;
+		close(clientFd);
 	}
-	// Clean
-	close(clientFd);
+}
+
+void AreaServer::setHandler(AreaServerHandler *handler){
+	messageHandler = handler;
 }

@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <vulkan/vulkan.hpp>
 #include <queue>
 
 enum IPCType{
@@ -26,6 +27,12 @@ private:
 	std::condition_variable fullCond;
 	std::condition_variable emptyCond;
 	std::queue<IPCMessage> msgQueue;
+};
+
+class IPCConnectMessage: public IPCMessage{
+public:
+	VkFormat format;
+	VkExtent2D extent;
 };
 
 #endif

@@ -10,7 +10,7 @@ int main(int argc, char *argv[]){
 		// Init backend
 		BackendBase *backend = Backend::getBackend();
 		// Create greeter node
-		AreaNode greeter("/tmp/dear_greeter");
+		AreaNode greeter("/tmp/dear_greeter", backend);
 		// Clean
 		delete backend;
 	}catch(const char *e){

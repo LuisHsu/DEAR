@@ -78,7 +78,7 @@ BackendXcbVK::BackendXcbVK():
 	// App info
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "DEAR Desktop";
+	appInfo.pApplicationName = "DearDM";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -1033,39 +1033,6 @@ BackendXcbVK::~BackendXcbVK(){
 
 	xcb_destroy_window(xcbConnection, xcbWindow);
 	xcb_disconnect(xcbConnection);
-}
-
-VkShaderModule BackendXcbVK::createShaderModule(const char *fileName){
-	// Read code
-	std::ifstream fin(fileName, std::ios::ate | std::ios::binary);
-	if (!fin.is_open()) {
-		throw "[Vulkan shader] failed to open file";
-	}
-	uint32_t codeSize = (size_t)fin.tellg();
-	std::vector<char> shaderCode(codeSize);
-	fin.seekg(0);
-	fin.read(shaderCode.data(), codeSize);
-	fin.close();
-	// Create
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = codeSize;
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
-	VkShaderModule ret;
-	switch(vkCreateShaderModule(vkDevice, &createInfo, nullptr, &ret)){
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan shader] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan shader] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-		break;
-		case VK_ERROR_INVALID_SHADER_NV:
-			throw "[Vulkan shader] VK_ERROR_INVALID_SHADER_NV";
-		break;
-		default:
-		break;
-	}
-	return ret;
 }
 
 void BackendXcbVK::paint(){

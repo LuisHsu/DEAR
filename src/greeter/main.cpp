@@ -1,9 +1,12 @@
 #include <iostream>
-#include <area/Server.hpp>
+#include <Server.hpp>
+#include <Greeter.hpp>
 
 int main(int argc, char *argv[]){
-	// Create 
+	// Create server 
 	AreaServer *greeterServer = new AreaServer("/tmp/dear_greeter");
+	// Greeter
+	Greeter greeter(greeterServer);
 	// Listen
 	greeterServer->start();
 	// Clean

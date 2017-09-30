@@ -13,34 +13,55 @@ extern "C"{
 #include <cstdlib>
 #include <cerrno>
 #include <vector>
+#include <list>
 #include <IPCMessage.hpp>
+
+
+class AreaServer;
+class AreaServerHandler;
+
+class AreaClient{
+public:
+	AreaClient(
+		uint32_t index,
+		int fd,
+		struct sockaddr_un addr,
+		uint32_t addrlen,
+		AreaServer *server,
+		struct event_base *eventBase,
+		AreaServerHandler *handler
+	);
+	void *data = nullptr;
+private:
+	uint32_t index;
+	int clientFd;
+	struct sockaddr_un addr;
+	uint32_t addrlen;
+	AreaServer *server;
+	struct event *receiveEvent;
+	AreaServerHandler *messageHandler;
+	static void socketReceive(evutil_socket_t fd, short event, void *arg);
+};
 
 class AreaServerHandler{
 public:
-	virtual void handleMessage(IPCMessage *message) = 0;
+	virtual void handleMessage(IPCMessage *message, AreaClient *client) = 0;
 };
 
 class AreaServer{
 public:
 	AreaServer(const char *path);
 	~AreaServer();
-	void setHandler(AreaServerHandler *handler);
-	void start();
+	void start(AreaServerHandler *handler);
+	void eraseClient(uint32_t index);
 private:
-	class AreaSocketReceiveArg {
-	public:
-		AreaServer *areaServer;
-		struct event *receiveEvent;
-	};
 	int listenFd;
-	int clientFd;
-	uint32_t clientAddrlen;
 	struct sockaddr_un listenAddr;
-	struct sockaddr_un clientAddr;
 	struct event_base *eventBase;
-	AreaServerHandler *messageHandler;
+	struct event *acceptEvent;
+	AreaServerHandler *handler;
+	std::list<AreaClient *> clients;
 	static void socketAccept(evutil_socket_t fd, short event, void *arg);
-	static void socketReceive(evutil_socket_t fd, short event, void *arg);
 };
 
 #endif

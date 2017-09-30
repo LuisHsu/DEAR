@@ -1,16 +1,6 @@
 #include <Greeter.hpp>
 
-Greeter::Greeter(AreaServer *server){
-	server->setHandler(this);
-}
-Greeter::~Greeter(){
-	vkDestroyDevice(vkDevice, nullptr);
-	vkDestroyInstance(vkInstance, nullptr);
-}
-void Greeter::initVulkan(IPCMessage *message){
-	IPCConnectMessage *connectMessage = (IPCConnectMessage *)message;
-	vkImageExtent = connectMessage->extent;
-	vkImageFormat = connectMessage->format;
+Greeter::Greeter(){
 	VkPhysicalDevice vkPhyDevice;
 /*** Instance ***/
 	// App info
@@ -27,9 +17,10 @@ void Greeter::initVulkan(IPCMessage *message){
 	instanceCreateInfo.pApplicationInfo = &appInfo;
 	instanceCreateInfo.enabledLayerCount = 0;
 	// Extensions
-	instanceCreateInfo.enabledExtensionCount = 1;
+	instanceCreateInfo.enabledExtensionCount = 2;
 	const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
 	extensionNames[0] = "VK_KHR_surface";
+	extensionNames[1] = "VK_EXT_debug_report";
 	instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
 	// Create instance
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance)){
@@ -161,6 +152,15 @@ void Greeter::initVulkan(IPCMessage *message){
 	}
 	// Get queue
 	vkGetDeviceQueue(vkDevice, graphicsFamily, 0, &vkGraphicsQueue);
+}
+Greeter::~Greeter(){
+	vkDestroyDevice(vkDevice, nullptr);
+	vkDestroyInstance(vkInstance, nullptr);
+}
+void Greeter::initVulkan(IPCMessage *message, GreeterClient *client){
+	IPCConnectMessage *connectMessage = (IPCConnectMessage *)message;
+	client->vkImageExtent = connectMessage->extent;
+	client->vkImageFormat = connectMessage->format;
 /*** Image ***/
 	// External image create info
 	VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {};
@@ -170,22 +170,22 @@ void Greeter::initVulkan(IPCMessage *message){
 	VkImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageCreateInfo.pNext = &externalImageCreateInfo;
-	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	//imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageCreateInfo.format = vkImageFormat;
-	imageCreateInfo.extent.width = vkImageExtent.width;
-	imageCreateInfo.extent.height = vkImageExtent.height;
+	imageCreateInfo.format = client->vkImageFormat;
+	imageCreateInfo.extent.width = client->vkImageExtent.width;
+	imageCreateInfo.extent.height = client->vkImageExtent.height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.mipLevels = 1;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.queueFamilyIndexCount = 0;
 	imageCreateInfo.pQueueFamilyIndices = nullptr;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	switch(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &vkPresentImage)){
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	switch(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &(client->vkPresentImage))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan create image] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
@@ -195,12 +195,74 @@ void Greeter::initVulkan(IPCMessage *message){
 		default:
 		break;
 	}
-
+/*** External Memory ***/
+	// Get requirement
+	VkMemoryRequirements memoryRequirement = {};
+	vkGetImageMemoryRequirements(vkDevice, client->vkPresentImage, &memoryRequirement);
+	// Allocate info
+	VkExportMemoryAllocateInfoKHR exportAllocateInfo = {};
+	exportAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR;
+	exportAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.pNext = &exportAllocateInfo;
+	memoryAllocateInfo.allocationSize = memoryRequirement.size;
+	memoryAllocateInfo.memoryTypeIndex = ffs(memoryRequirement.memoryTypeBits) - 1;
+	// Allocate
+	switch(vkAllocateMemory(vkDevice, &memoryAllocateInfo, nullptr, &(client->vkExportMemory))){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan allocate export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan allocate export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_TOO_MANY_OBJECTS:
+			throw "[Vulkan allocate export memory] VK_ERROR_TOO_MANY_OBJECTS";
+		break;
+		case VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR:
+			throw "[Vulkan allocate export memory] VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR";
+		break;
+		default:
+		break;
+	}
+	// Bind to image
+	switch(vkBindImageMemory(vkDevice, client->vkPresentImage, client->vkExportMemory, 0)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan bind export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan bind export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		default:
+		break;
+	}
+/*** Image View ***/
+	VkImageViewCreateInfo imageViewCreateInfo = {};
+	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewCreateInfo.image = client->vkPresentImage;
+	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewCreateInfo.format = client->vkImageFormat;
+	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+	imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+	imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	imageViewCreateInfo.subresourceRange.levelCount = 1;
+	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewCreateInfo.subresourceRange.layerCount = 1;
+	if(vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &(client->vkPresentImageView))!= VK_SUCCESS){
+		throw "[Vulkan image view] Error create image view.";
+	}
 }
-void Greeter::handleMessage(IPCMessage *message){
+void Greeter::handleMessage(IPCMessage *message, AreaClient *client){
 	switch(message->type){
 		case IPC_Connect:
-			initVulkan(message);
+			{
+				GreeterClient *greeterClient = new GreeterClient;
+				client->data = greeterClient;
+				initVulkan(message, greeterClient);
+			}
 		break;
 		default:
 		break;

@@ -157,7 +157,7 @@ Greeter::~Greeter(){
 	vkDestroyDevice(vkDevice, nullptr);
 	vkDestroyInstance(vkInstance, nullptr);
 }
-void Greeter::initVulkan(IPCMessage *message, GreeterClient *client){
+void Greeter::initClient(IPCMessage *message, GreeterClient *client){
 	IPCConnectMessage *connectMessage = (IPCConnectMessage *)message;
 	client->vkImageExtent = connectMessage->extent;
 	client->vkImageFormat = connectMessage->format;
@@ -254,6 +254,45 @@ void Greeter::initVulkan(IPCMessage *message, GreeterClient *client){
 	if(vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &(client->vkPresentImageView))!= VK_SUCCESS){
 		throw "[Vulkan image view] Error create image view.";
 	}
+
+/*** Display socket ***/
+	// Create socket
+	client->displayFd = socket(AF_UNIX, SOCK_STREAM, 0);
+	// Fill address
+	client->displayDMAddr.sun_family = AF_UNIX;
+	strcpy(client->displayDMAddr.sun_path, connectMessage->displayFile);
+	client->displayAddr.sun_family = AF_UNIX;
+	sprintf(client->displayAddr.sun_path, "%s-greeter", connectMessage->displayFile);
+	// Bind
+	if(bind(client->displayFd, (struct sockaddr *)&(client->displayAddr), sizeof(client->displayAddr)) < 0){
+		close(client->displayFd);
+		throw "[Greeter display socket] Can't bind socket.";
+	}
+	// Connect
+	if(connect(client->displayFd, (struct sockaddr *)&(client->displayDMAddr), sizeof(client->displayDMAddr)) < 0){
+		std::cerr << strerror(errno) << std::endl;
+		close(client->displayFd);
+		throw "[Greeter display socket] Can't connect to DM display.";
+	}
+	// Get memory fd
+	VkMemoryGetFdInfoKHR getFdInfo = {};
+	getFdInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+	getFdInfo.memory = client->vkExportMemory;
+	getFdInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+	switch(vkGetMemoryFdKHR(vkDevice, &getFdInfo, &(client->memoryFd))){
+		case VK_ERROR_TOO_MANY_OBJECTS:
+			throw "[Greeter get memory file descriptor] VK_ERROR_TOO_MANY_OBJECTS";
+		break;
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Greeter get memory file descriptor] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_EXTENSION_NOT_PRESENT:
+			throw "[Greeter get memory file descriptor] VK_ERROR_EXTENSION_NOT_PRESENT";
+		break;
+		default:
+		break;
+	}
+	// Dup to socket
 }
 void Greeter::handleMessage(IPCMessage *message, AreaClient *client){
 	switch(message->type){
@@ -261,10 +300,20 @@ void Greeter::handleMessage(IPCMessage *message, AreaClient *client){
 			{
 				GreeterClient *greeterClient = new GreeterClient;
 				client->data = greeterClient;
-				initVulkan(message, greeterClient);
+				initClient(message, greeterClient);
 			}
 		break;
 		default:
 		break;
+	}
+}
+
+VkResult Greeter::vkGetMemoryFdKHR(VkDevice device,  const VkMemoryGetFdInfoKHR *pGetFdInfo, int* pFd){
+	auto func = (PFN_vkGetMemoryFdKHR) vkGetInstanceProcAddr(vkInstance, "vkGetMemoryFdKHR");
+	if (func != nullptr) {
+		 VkResult res = func(device, pGetFdInfo, pFd);
+		 return res;
+	}else{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
 	}
 }

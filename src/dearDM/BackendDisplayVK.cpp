@@ -356,7 +356,7 @@ BackendDisplayVK::BackendDisplayVK():
 	// Input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	// Viewport
 	VkViewport viewport = {};
@@ -593,7 +593,7 @@ BackendDisplayVK::BackendDisplayVK():
 		renderPassInfo.pClearValues = &clearColor;
 		vkCmdBeginRenderPass(vkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
-		vkCmdDraw(vkCommandBuffers[i], 3, 1, 0, 0);
+		vkCmdDraw(vkCommandBuffers[i], 4, 1, 0, 0);
 		vkCmdEndRenderPass(vkCommandBuffers[i]);
 		switch(vkEndCommandBuffer(vkCommandBuffers[i])){
 			case VK_ERROR_OUT_OF_HOST_MEMORY:

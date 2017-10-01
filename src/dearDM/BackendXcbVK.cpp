@@ -39,6 +39,7 @@ BackendXcbVK::BackendXcbVK():
 	// Get screen
 	xcb_screen_iterator_t screenIter = xcb_setup_roots_iterator(xcb_get_setup(xcbConnection));
 	xcbScreen = screenIter.data;
+
 	// Create Window
 	xcbWindow = xcb_generate_id(xcbConnection);
 	xcb_create_window(xcbConnection,
@@ -173,9 +174,10 @@ BackendXcbVK::BackendXcbVK():
 		throw "[Vulkan physical device] No suitable device.";
 	}
 /*** Surface ***/
-	// Pick display mode
-	vkDisplayExtent.width = xcbScreen->width_in_pixels;
-	vkDisplayExtent.height = xcbScreen->height_in_pixels;
+	// Get display extent
+	xcb_get_geometry_reply_t *windowGeometry = xcb_get_geometry_reply(xcbConnection, xcb_get_geometry_unchecked(xcbConnection, xcbWindow), nullptr);
+	vkDisplayExtent.width = windowGeometry->width;
+	vkDisplayExtent.height = windowGeometry->height;
 	// Create surface
 	VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {};
 	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -878,7 +880,7 @@ BackendXcbVK::BackendXcbVK():
 		renderPassInfo.pClearValues = &clearColor;
 		vkCmdBeginRenderPass(vkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
-		vkCmdDraw(vkCommandBuffers[i], 3, 1, 0, 0);
+		vkCmdDraw(vkCommandBuffers[i], 6, 1, 0, 0);
 		vkCmdEndRenderPass(vkCommandBuffers[i]);
 		switch(vkEndCommandBuffer(vkCommandBuffers[i])){
 			case VK_ERROR_OUT_OF_HOST_MEMORY:

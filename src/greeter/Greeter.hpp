@@ -16,6 +16,10 @@ public:
 	VkExtent2D vkImageExtent;
 	VkDeviceMemory vkExportMemory;
 	VkImageView vkPresentImageView;
+	int displayFd;
+	int memoryFd;
+	struct sockaddr_un displayDMAddr;
+	struct sockaddr_un displayAddr;
 };
 
 class Greeter : public AreaServerHandler{
@@ -28,7 +32,9 @@ private:
 	VkDevice vkDevice;
 	VkQueue vkGraphicsQueue;
 	void handleMessage(IPCMessage *message, AreaClient *client);
-	void initVulkan(IPCMessage *message, GreeterClient *client);
+	void initClient(IPCMessage *message, GreeterClient *client);
+
+	VkResult vkGetMemoryFdKHR(VkDevice device,  const VkMemoryGetFdInfoKHR *pGetFdInfo, int* pFd);
 };
 
 #endif

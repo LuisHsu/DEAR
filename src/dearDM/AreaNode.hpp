@@ -12,6 +12,8 @@ extern "C"{
 #include <cstring>
 #include <cerrno>
 #include <iostream>
+#include <atomic>
+#include <thread>
 #include <IPCMessage.hpp>
 #include <BackendBase.hpp>
 
@@ -32,7 +34,14 @@ private:
 	IPCMessageQueue *messageQueue = nullptr;
 	struct event_base *eventBase;
 
+	evutil_socket_t displayFd;
+	struct sockaddr_un displayAddr;
+	std::atomic<bool> isPainting;
+	std::thread *paintThread;
+
 	static void socketReceive(evutil_socket_t fd, short event, void *arg);
+	static void runBackendPaint(AreaNode *areaNode);
+	static void displayConnect(evutil_socket_t fd, short event, void *arg);
 	void messageHandler(IPCMessage *message);
 };
 

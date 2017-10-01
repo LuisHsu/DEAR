@@ -33,6 +33,7 @@ class IPCConnectMessage: public IPCMessage{
 public:
 	VkFormat format;
 	VkExtent2D extent;
+	char displayFile[108];
 };
 
 #endif

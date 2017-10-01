@@ -2,7 +2,8 @@
 
 AreaNode::AreaNode(const char *path, BackendBase *backend):
 	backend(backend),
-	messageQueue(new IPCMessageQueue(10))
+	messageQueue(new IPCMessageQueue(10)),
+	isPainting(false)
 {
 /*** IPC socket ***/
 	// Create socket
@@ -31,17 +32,18 @@ AreaNode::AreaNode(const char *path, BackendBase *backend):
 		close(socketFd);
 		throw "[DearDM area node] Can't create event base.";
 	}
-	struct event *recvEvent = event_new(eventBase, socketFd, EV_READ|EV_PERSIST, socketReceive, nullptr);
 	AreaSocketReceiveArg *recvArg = new AreaSocketReceiveArg;
 	recvArg->areaNode = this;
-	recvArg->recvEvent = recvEvent;
-	event_assign(recvEvent, eventBase, socketFd, EV_READ|EV_PERSIST, socketReceive, recvArg);
-	event_add(recvEvent, nullptr);
+	recvArg->recvEvent = event_new(eventBase, socketFd, EV_READ|EV_PERSIST, socketReceive, recvArg);
+	event_add(recvArg->recvEvent, nullptr);
 	event_base_dispatch(eventBase);
 }
-
 AreaNode::~AreaNode(){
+	isPainting = false;
+	paintThread->join();
+	delete paintThread;
 	unlink(clientAddr.sun_path);
+	unlink(displayAddr.sun_path);
 	delete messageQueue;
 }
 void AreaNode::socketReceive(evutil_socket_t socketFd, short event, void *arg){
@@ -74,13 +76,37 @@ void AreaNode::socketReceive(evutil_socket_t socketFd, short event, void *arg){
 void AreaNode::messageHandler(IPCMessage *message){
 	switch(message->type){
 		case IPC_Connect:
-			// Send connect message
 			{
+				// Create display socket
+				displayFd = socket(AF_UNIX, SOCK_STREAM, 0);
+				// Fill display address
+				displayAddr.sun_family = AF_UNIX;
+				sprintf(displayAddr.sun_path, "/tmp/dearDM-display-%d", getpid());
+				// Unlink previous display file
+				unlink(displayAddr.sun_path);
+				// Bind display
+				if(bind(displayFd, (struct sockaddr *)&displayAddr, sizeof(displayAddr)) < 0){
+					close(displayFd);
+					throw "[DearDM connect] Can't bind display socket.";
+				}
+				// Listen display
+				if(listen(displayFd, 10) < 0){
+					close(displayFd);
+					throw "[DearDM connect] Can't listen display socket.";
+				}
+				// Display connect event
+				evutil_make_socket_nonblocking(displayFd);
+				AreaSocketReceiveArg *connectArg = new AreaSocketReceiveArg;
+				connectArg->areaNode = this;
+				connectArg->recvEvent = event_new(eventBase, displayFd, EV_READ|EV_PERSIST, displayConnect, connectArg);
+				event_add(connectArg->recvEvent, nullptr);
+				// Send connect message
 				IPCConnectMessage connectMessage;
 				connectMessage.type = IPC_Connect;
 				connectMessage.length = sizeof(connectMessage);
 				connectMessage.extent = backend->vkDisplayExtent;
 				connectMessage.format = backend->vkSurfaceFormat.format;
+				strcpy(connectMessage.displayFile, displayAddr.sun_path);
 				if(send(socketFd, &connectMessage, connectMessage.length, 0) < 0){
 					close(socketFd);
 					throw "[DearDM area node] Can't send connect message.";
@@ -89,5 +115,29 @@ void AreaNode::messageHandler(IPCMessage *message){
 		break;
 		default:
 		break;
+	}
+}
+void AreaNode::displayConnect(evutil_socket_t listenFd, short event, void *arg){
+	AreaSocketReceiveArg *areaArg = (AreaSocketReceiveArg *)arg;
+	// Accept
+	int areaFd = accept(listenFd, nullptr, nullptr);
+	if(areaFd >= 0){
+		// Set fd
+		areaArg->areaNode->displayFd = areaFd;
+		// Delete event and close listen socket
+		event_del(areaArg->recvEvent);
+		event_free(areaArg->recvEvent);
+		close(listenFd);
+		// Start paint thread
+		areaArg->areaNode->isPainting = true;
+		areaArg->areaNode->paintThread = new std::thread(runBackendPaint, areaArg->areaNode);
+		delete areaArg;
+	}else{
+		std::cerr << strerror(errno) << std::endl;
+	}
+}
+void AreaNode::runBackendPaint(AreaNode *areaNode){
+	while(areaNode->isPainting){
+		areaNode->backend->paint();
 	}
 }

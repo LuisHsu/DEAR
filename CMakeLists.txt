@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror")
 set(CMAKE_DEBUG_POSTFIX "_d")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib -lvulkan -levent -lpthread")
+set(GLSLANG_VALIDATOR ${CMAKE_CURRENT_LIST_DIR}/tools/glslangValidator)
 
 find_package(Wayland REQUIRED)
 if(WAYLAND_FOUND)

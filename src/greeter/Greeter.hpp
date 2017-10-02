@@ -41,7 +41,9 @@ private:
 	int32_t vkGraphicsFamily;
 
 	void handleMessage(IPCMessage *message, AreaClient *client);
-	void initClient(IPCMessage *message, GreeterClient *client);
+	void initClient(IPCMessage *message, AreaClient *client);
+	void paint(GreeterClient *client);
+	void sendDisplayFd(int sockfd, int memfd);
 
 	VkResult vkGetMemoryFdKHR(VkDevice device,  const VkMemoryGetFdInfoKHR *pGetFdInfo, int* pFd);
 	VkShaderModule createShaderModule(const char *fileName);

@@ -7,8 +7,9 @@
 #include <fstream>
 #include <vulkan/vulkan.hpp>
 extern "C"{
-#include <xcb/xcb.h>
-#include <unistd.h>
+	#include <xcb/xcb.h>
+	#include <unistd.h>
+	#include <strings.h>
 }
 
 #include <BackendBase.hpp>
@@ -18,6 +19,7 @@ public:
 	BackendXcbVK();
 	~BackendXcbVK();
 	void paint();
+	void initTexture(int fd);
 private:
 	xcb_connection_t *xcbConnection = nullptr;
 	xcb_window_t xcbWindow;

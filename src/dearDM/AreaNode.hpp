@@ -42,6 +42,7 @@ private:
 	static void socketReceive(evutil_socket_t fd, short event, void *arg);
 	static void runBackendPaint(AreaNode *areaNode);
 	static void displayConnect(evutil_socket_t fd, short event, void *arg);
+	static int recvDisplayFd(int sockFd);
 	void messageHandler(IPCMessage *message);
 };
 

@@ -14,6 +14,7 @@ public:
 	BackendBase(SurfType surf);
 	virtual ~BackendBase();
 	virtual void paint() = 0;
+	virtual void initTexture(int fd) = 0;
 
 	VkInstance vkInstance;
 	VkDevice vkDevice;
@@ -22,13 +23,19 @@ public:
 	VkQueue vkPresentQueue;
 	VkSwapchainKHR vkSwapChain;
 	VkRenderPass vkRenderPass;
-	VkPipelineLayout vkPipelineLayout;
 	VkPipeline vkGraphicsPipeline;
 	VkCommandPool vkCommandPool;
 	VkExtent2D vkDisplayExtent;
 	VkSurfaceFormatKHR vkSurfaceFormat;
 	VkSemaphore vkImageAvailableSemaphore;
 	VkSemaphore vkRenderFinishedSemaphore;
+	VkImage vkTextureImage;
+	VkDeviceMemory vkTextureMemory;
+	VkImageView vkTextureImageView;
+	VkSampler vkTextureSampler;
+	VkDescriptorPool vkDescriptorPool;
+	VkDescriptorSet vkDescriptorSet;
+	VkPipelineLayout vkPipelineLayout;
 	std::vector<VkImage> vkSwapChainImages;
 	std::vector<VkImageView> vkSwapChainImageViews;
 	std::vector<VkFramebuffer> vkSwapChainFramebuffers;

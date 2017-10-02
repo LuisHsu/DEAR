@@ -122,12 +122,14 @@ void AreaNode::displayConnect(evutil_socket_t listenFd, short event, void *arg){
 	// Accept
 	int areaFd = accept(listenFd, nullptr, nullptr);
 	if(areaFd >= 0){
-		// Set fd
-		areaArg->areaNode->displayFd = areaFd;
 		// Delete event and close listen socket
 		event_del(areaArg->recvEvent);
 		event_free(areaArg->recvEvent);
 		close(listenFd);
+		// Get fd
+		areaArg->areaNode->displayFd = recvDisplayFd(areaFd);
+		// Init texture
+		areaArg->areaNode->backend->initTexture(areaArg->areaNode->displayFd);
 		// Start paint thread
 		areaArg->areaNode->isPainting = true;
 		areaArg->areaNode->paintThread = new std::thread(runBackendPaint, areaArg->areaNode);
@@ -140,4 +142,42 @@ void AreaNode::runBackendPaint(AreaNode *areaNode){
 	while(areaNode->isPainting){
 		areaNode->backend->paint();
 	}
+}
+int AreaNode::recvDisplayFd(int sockFd){
+	int newfd, recvNum;
+	char *ptr;
+	char buf[1024];
+	struct iovec iov;
+	struct msghdr msg;
+	struct cmsghdr *cmptr;
+	iov.iov_base = buf;
+	iov.iov_len = sizeof(buf);
+	msg.msg_iov = &iov;
+	msg.msg_iovlen = 1;
+	msg.msg_name = nullptr;
+	msg.msg_namelen = 0;
+	if((cmptr = (struct cmsghdr *)malloc(CMSG_LEN(sizeof(int)))) == nullptr){
+		throw "[DearDM receive display fd] Can't alloc cmptr.";
+	}
+	msg.msg_control = cmptr;
+	msg.msg_controllen = CMSG_LEN(sizeof(int));
+	if((recvNum = recvmsg(sockFd, &msg, 0)) <= 0) {
+		throw "[DearDM receive display fd] Error receive message.";
+	}
+	for(ptr = buf; ptr < &buf[recvNum]; ){
+		if(*ptr++ == 0) {
+			if(ptr != &buf[recvNum-1]){
+				throw "[DearDM receive display fd] Message format error.";
+			}
+			if((*ptr & 0xFF) == 0) {
+				if (msg.msg_controllen != CMSG_LEN(sizeof(int)))
+					throw "[DearDM receive display fd] No file descriptor.";
+				newfd = *(int *)CMSG_DATA(cmptr);
+			}else{
+				newfd = -1;
+			}
+			recvNum -= 2;
+		}
+	}
+	return newfd;
 }

@@ -13,6 +13,7 @@ public:
 	BackendDisplayVK();
 	~BackendDisplayVK();
 	void paint();
+	void initTexture(int fd);
 private:
 };
 

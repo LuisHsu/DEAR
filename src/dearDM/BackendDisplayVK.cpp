@@ -419,23 +419,6 @@ BackendDisplayVK::BackendDisplayVK():
 	colorBlending.blendConstants[1] = 0.0f;
 	colorBlending.blendConstants[2] = 0.0f;
 	colorBlending.blendConstants[3] = 0.0f;
-	// Pipeline layout
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = 0;
-	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-		break;
-		default:
-		break;
-	}
 /*** Render pass ***/
 	// Color attachment
 	VkAttachmentDescription colorAttachment = {};
@@ -638,7 +621,6 @@ BackendDisplayVK::~BackendDisplayVK(){
 	for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
-	vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 	vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
 	for (VkImageView imageView : vkSwapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
@@ -704,4 +686,7 @@ void BackendDisplayVK::paint(){
 		default:
 		break;
 	}	
+}
+
+void BackendDisplayVK::initTexture(int fd){
 }

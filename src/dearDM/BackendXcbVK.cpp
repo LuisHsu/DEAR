@@ -357,7 +357,7 @@ BackendXcbVK::BackendXcbVK():
 	VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
 	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swapChainCreateInfo.surface = vkSurface;
-	swapChainCreateInfo.minImageCount = (surfaceCapability.minImageCount + 1 > surfaceCapability.maxImageCount) ? surfaceCapability.maxImageCount : surfaceCapability.minImageCount + 1;
+	swapChainCreateInfo.minImageCount = (surfaceCapability.minImageCount > surfaceCapability.maxImageCount) ? surfaceCapability.maxImageCount : surfaceCapability.minImageCount;
 	swapChainCreateInfo.imageFormat = vkSurfaceFormat.format;
 	swapChainCreateInfo.imageColorSpace = vkSurfaceFormat.colorSpace;
 	swapChainCreateInfo.imageExtent = vkDisplayExtent;
@@ -547,43 +547,6 @@ BackendXcbVK::BackendXcbVK():
 	colorBlending.blendConstants[1] = 0.0f;
 	colorBlending.blendConstants[2] = 0.0f;
 	colorBlending.blendConstants[3] = 0.0f;
-	// Pipeline layout
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = 0;
-	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-		for (VkImageView imageView : vkSwapChainImageViews) {
-			vkDestroyImageView(vkDevice, imageView, nullptr);
-		}
-		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-		vkDestroyDevice(vkDevice, nullptr);
-		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-		vkDestroyInstance(vkInstance, nullptr);
-		xcb_destroy_window(xcbConnection, xcbWindow);
-		xcb_disconnect(xcbConnection);
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-		for (VkImageView imageView : vkSwapChainImageViews) {
-			vkDestroyImageView(vkDevice, imageView, nullptr);
-		}
-		vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-		vkDestroyDevice(vkDevice, nullptr);
-		vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-		vkDestroyInstance(vkInstance, nullptr);
-		xcb_destroy_window(xcbConnection, xcbWindow);
-		xcb_disconnect(xcbConnection);
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-		break;
-		default:
-		break;
-	}
 /*** Render pass ***/
 	// Color attachment
 	VkAttachmentDescription colorAttachment = {};
@@ -624,7 +587,6 @@ BackendXcbVK::BackendXcbVK():
 	switch(vkCreateRenderPass(vkDevice, &renderPassCreateInfo, nullptr, &vkRenderPass)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 			for (VkImageView imageView : vkSwapChainImageViews) {
 				vkDestroyImageView(vkDevice, imageView, nullptr);
 			}
@@ -638,7 +600,6 @@ BackendXcbVK::BackendXcbVK():
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
 			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 			for (VkImageView imageView : vkSwapChainImageViews) {
 				vkDestroyImageView(vkDevice, imageView, nullptr);
 			}
@@ -674,7 +635,6 @@ BackendXcbVK::BackendXcbVK():
 	switch(vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -688,7 +648,6 @@ BackendXcbVK::BackendXcbVK():
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -702,7 +661,6 @@ BackendXcbVK::BackendXcbVK():
 		break;
 		case VK_ERROR_INVALID_SHADER_NV:
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -734,7 +692,6 @@ BackendXcbVK::BackendXcbVK():
 			case VK_ERROR_OUT_OF_HOST_MEMORY:
 			vkDestroyFramebuffer(vkDevice, vkSwapChainFramebuffers[i], nullptr);
 			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 			for (VkImageView imageView : vkSwapChainImageViews) {
 				vkDestroyImageView(vkDevice, imageView, nullptr);
 			}
@@ -749,7 +706,6 @@ BackendXcbVK::BackendXcbVK():
 			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
 			vkDestroyFramebuffer(vkDevice, vkSwapChainFramebuffers[i], nullptr);
 			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 			for (VkImageView imageView : vkSwapChainImageViews) {
 				vkDestroyImageView(vkDevice, imageView, nullptr);
 			}
@@ -765,6 +721,7 @@ BackendXcbVK::BackendXcbVK():
 			break;
 		}
 	}
+
 /*** Command pool ***/
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -777,7 +734,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -795,7 +751,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -824,7 +779,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -842,7 +796,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -857,69 +810,7 @@ BackendXcbVK::BackendXcbVK():
 		default:
 		break;
 	}
-/*** Command buffer record ***/
-	for(uint32_t i = 0; i < vkCommandBuffers.size(); ++i) {
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		beginInfo.pInheritanceInfo = nullptr;
-		// Start command buffer
-		vkBeginCommandBuffer(vkCommandBuffers[i], &beginInfo);
-		// Start render pass
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = vkRenderPass;
-		renderPassInfo.framebuffer = vkSwapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = {0, 0};
-		renderPassInfo.renderArea.extent = vkDisplayExtent;
-		VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-		vkCmdBeginRenderPass(vkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
-		vkCmdDraw(vkCommandBuffers[i], 6, 1, 0, 0);
-		vkCmdEndRenderPass(vkCommandBuffers[i]);
-		switch(vkEndCommandBuffer(vkCommandBuffers[i])){
-			case VK_ERROR_OUT_OF_HOST_MEMORY:
-			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
-			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
-				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
-			}
-			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-			for (VkImageView imageView : vkSwapChainImageViews) {
-				vkDestroyImageView(vkDevice, imageView, nullptr);
-			}
-			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-			vkDestroyDevice(vkDevice, nullptr);
-			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-			vkDestroyInstance(vkInstance, nullptr);
-			xcb_destroy_window(xcbConnection, xcbWindow);
-			xcb_disconnect(xcbConnection);
-				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_HOST_MEMORY";
-			break;
-			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
-			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
-				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
-			}
-			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-			for (VkImageView imageView : vkSwapChainImageViews) {
-				vkDestroyImageView(vkDevice, imageView, nullptr);
-			}
-			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
-			vkDestroyDevice(vkDevice, nullptr);
-			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-			vkDestroyInstance(vkInstance, nullptr);
-			xcb_destroy_window(xcbConnection, xcbWindow);
-			xcb_disconnect(xcbConnection);
-				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-			break;
-			default:
-			break;
-		}
-	}
+
 /*** Create semaphores ***/
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -931,7 +822,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -950,7 +840,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -974,7 +863,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -994,7 +882,6 @@ BackendXcbVK::BackendXcbVK():
 			vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 		}
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-		vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 		for (VkImageView imageView : vkSwapChainImageViews) {
 			vkDestroyImageView(vkDevice, imageView, nullptr);
 		}
@@ -1009,6 +896,7 @@ BackendXcbVK::BackendXcbVK():
 		default:
 		break;
 	}
+
 }
 
 BackendXcbVK::~BackendXcbVK(){
@@ -1019,7 +907,6 @@ BackendXcbVK::~BackendXcbVK(){
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
 	}
 	vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
-	vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
 	for (VkImageView imageView : vkSwapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
@@ -1087,4 +974,250 @@ void BackendXcbVK::paint(){
 		default:
 		break;
 	}	
+}
+void BackendXcbVK::initTexture(int fd){
+	VkDescriptorSetLayout vkDescriptorSetLayout;
+/*** Texture image ***/
+	// External image create info
+	VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {};
+	externalImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR;
+	externalImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+	// Image crate info
+	VkImageCreateInfo textureImageInfo = {};
+	textureImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	textureImageInfo.pNext = &externalImageCreateInfo;
+	textureImageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	textureImageInfo.imageType = VK_IMAGE_TYPE_2D;
+	textureImageInfo.format = vkSurfaceFormat.format;
+	textureImageInfo.extent.width = vkDisplayExtent.width;
+	textureImageInfo.extent.height = vkDisplayExtent.height;
+	textureImageInfo.extent.depth = 1;
+	textureImageInfo.mipLevels = 1;
+	textureImageInfo.arrayLayers = 1;
+	textureImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	textureImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	textureImageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+	textureImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	textureImageInfo.queueFamilyIndexCount = 0;
+	textureImageInfo.pQueueFamilyIndices = nullptr;
+	textureImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	switch(vkCreateImage(vkDevice, &textureImageInfo, nullptr, &vkTextureImage)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan create texture image] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan create texture image] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+/*** Texture memory ***/
+	// Get requirement
+	VkMemoryRequirements textureMemoryRequirement = {};
+	vkGetImageMemoryRequirements(vkDevice, vkTextureImage, &textureMemoryRequirement);
+	// Allocate info
+	VkImportMemoryFdInfoKHR importAllocateInfo = {};
+	importAllocateInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR;
+	importAllocateInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+	importAllocateInfo.fd = fd;
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.pNext = &importAllocateInfo;
+	memoryAllocateInfo.allocationSize = textureMemoryRequirement.size;
+	memoryAllocateInfo.memoryTypeIndex = ffs(textureMemoryRequirement.memoryTypeBits) - 1;
+	// Allocate
+	switch(vkAllocateMemory(vkDevice, &memoryAllocateInfo, nullptr, &vkTextureMemory)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan allocate texture memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan allocate texture memory] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		case VK_ERROR_TOO_MANY_OBJECTS:
+			throw "[Vulkan allocate texture memory] VK_ERROR_TOO_MANY_OBJECTS";
+		break;
+		case VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR:
+			throw "[Vulkan allocate texture memory] VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR";
+		break;
+		default:
+		break;
+	}
+	// Bind to image
+	switch(vkBindImageMemory(vkDevice, vkTextureImage, vkTextureMemory, 0)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan bind texture memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan bind texture memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		default:
+		break;
+	}
+/*** Texture image view ***/
+	// Creare info
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = vkTextureImage;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = vkSurfaceFormat.format;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+	if(vkCreateImageView(vkDevice, &viewInfo, nullptr, &vkTextureImageView)!= VK_SUCCESS){
+		throw "[Vulkan texture image view] Error create image view.";
+	}
+/*** Texture sampler ***/
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+	if(vkCreateSampler(vkDevice, &samplerInfo, nullptr, &vkTextureSampler)!= VK_SUCCESS){
+		throw "[Vulkan texture sampler] Error create sampler.";
+	}
+/*** Descriptor Set **/
+	// Layout binding
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &samplerLayoutBinding;
+	if(vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &vkDescriptorSetLayout) != VK_SUCCESS) {
+		throw "[Vulkan texture sampler] Error create descriptor set layout!";
+	}
+	// Descriptor pool
+	VkDescriptorPoolSize poolSize = {};
+	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount = 1;
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = 1;
+	if(vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &vkDescriptorPool) != VK_SUCCESS) {
+		throw "[Vulkan texture descriptor] Error create descriptor pool.";
+	}
+	// Descriptor set
+	VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
+	descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocInfo.descriptorPool = vkDescriptorPool;
+	descriptorSetAllocInfo.descriptorSetCount = 1;
+	descriptorSetAllocInfo.pSetLayouts = &vkDescriptorSetLayout;
+	if(vkAllocateDescriptorSets(vkDevice, &descriptorSetAllocInfo, &vkDescriptorSet) != VK_SUCCESS) {
+		throw "[Vulkan texture descriptor] Error allocate descriptor set!";
+	}
+	// Descriptor set image info
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = vkTextureImageView;
+	imageInfo.sampler = vkTextureSampler;
+	// Write
+	VkWriteDescriptorSet descriptorWrite = {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = vkDescriptorSet;
+	descriptorWrite.dstBinding = 1;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pImageInfo = &imageInfo;
+	vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
+/*** Pipeline layout ***/
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges = 0;
+	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+/*** Command buffer record ***/
+	for(uint32_t i = 0; i < vkCommandBuffers.size(); ++i) {
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		beginInfo.pInheritanceInfo = nullptr;
+		// Start command buffer
+		vkBeginCommandBuffer(vkCommandBuffers[i], &beginInfo);
+		// Start render pass
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = vkRenderPass;
+		renderPassInfo.framebuffer = vkSwapChainFramebuffers[i];
+		renderPassInfo.renderArea.offset = {0, 0};
+		renderPassInfo.renderArea.extent = vkDisplayExtent;
+		VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+		vkCmdBeginRenderPass(vkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindDescriptorSets(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
+		vkCmdBindPipeline(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+		vkCmdDraw(vkCommandBuffers[i], 6, 1, 0, 0);
+		vkCmdEndRenderPass(vkCommandBuffers[i]);
+		switch(vkEndCommandBuffer(vkCommandBuffers[i])){
+			case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+			}
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
+				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_HOST_MEMORY";
+			break;
+			case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyCommandPool(vkDevice, vkCommandPool, nullptr);
+			for (VkFramebuffer framebuffer : vkSwapChainFramebuffers) {
+				vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+			}
+			vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
+			for (VkImageView imageView : vkSwapChainImageViews) {
+				vkDestroyImageView(vkDevice, imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(vkDevice, vkSwapChain, nullptr);
+			vkDestroyDevice(vkDevice, nullptr);
+			vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+			vkDestroyInstance(vkInstance, nullptr);
+			xcb_destroy_window(xcbConnection, xcbWindow);
+			xcb_disconnect(xcbConnection);
+				throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+			break;
+			default:
+			break;
+		}
+	}
 }

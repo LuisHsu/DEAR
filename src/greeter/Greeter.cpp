@@ -17,12 +17,16 @@ Greeter::Greeter():
 	VkInstanceCreateInfo instanceCreateInfo = {};
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledLayerCount = 0;
+	instanceCreateInfo.enabledLayerCount = 1;
+	const char *layerNames[1];
+	layerNames[0] = "VK_LAYER_LUNARG_standard_validation";
+	instanceCreateInfo.ppEnabledLayerNames = layerNames;
 	// Extensions
-	instanceCreateInfo.enabledExtensionCount = 2;
+	instanceCreateInfo.enabledExtensionCount = 3;
 	const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
 	extensionNames[0] = "VK_KHR_surface";
 	extensionNames[1] = "VK_EXT_debug_report";
+	extensionNames[2] = "VK_KHR_external_memory_capabilities";
 	instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
 	// Create instance
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance)){
@@ -110,6 +114,7 @@ Greeter::Greeter():
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueCreateInfo.queueFamilyIndex = vkGraphicsFamily;
 	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.flags = 0;
 	float queuePriority = 1.0f;
 	queueCreateInfo.pQueuePriorities = &queuePriority;
 	// Create logical device
@@ -189,7 +194,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.queueFamilyIndexCount = 0;
 	imageCreateInfo.pQueueFamilyIndices = nullptr;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	switch(vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &(greeterClient->vkPresentImage))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan create image] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -415,7 +420,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	// Color attachment ref
 	VkAttachmentReference colorAttachmentRef = {};
 	colorAttachmentRef.attachment = 0;
@@ -470,6 +475,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
+	pipelineInfo.layout = greeterClient->vkPipelineLayout;
 	switch(vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &(greeterClient->vkGraphicsPipeline))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan pipeline] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -549,7 +555,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	renderPassInfo.framebuffer = greeterClient->vkFramebuffer;
 	renderPassInfo.renderArea.offset = {0, 0};
 	renderPassInfo.renderArea.extent = greeterClient->vkImageExtent;
-	VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+	VkClearValue clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	vkCmdBeginRenderPass(greeterClient->vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -641,13 +647,13 @@ void Greeter::paint(GreeterClient *client){
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &(client->vkImageAvailableSemaphore);
+	submitInfo.waitSemaphoreCount = 0;
+	//submitInfo.pWaitSemaphores = &(client->vkImageAvailableSemaphore);
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &(client->vkCommandBuffer);
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &(client->vkImageAvailableSemaphore);
+	submitInfo.signalSemaphoreCount = 0;
+	//submitInfo.pSignalSemaphores = &(client->vkImageAvailableSemaphore);
 	switch(vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan queue submit] VK_ERROR_OUT_OF_HOST_MEMORY";

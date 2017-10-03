@@ -139,9 +139,9 @@ void AreaNode::displayConnect(evutil_socket_t listenFd, short event, void *arg){
 	}
 }
 void AreaNode::runBackendPaint(AreaNode *areaNode){
-	while(areaNode->isPainting){
-		areaNode->backend->paint();
-	}
+	//while(areaNode->isPainting){
+	areaNode->backend->paint();
+	//}
 }
 int AreaNode::recvDisplayFd(int sockFd){
 	int newfd, recvNum;

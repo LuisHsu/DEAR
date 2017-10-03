@@ -86,12 +86,17 @@ BackendXcbVK::BackendXcbVK():
 	VkInstanceCreateInfo instanceCreateInfo = {};
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledLayerCount = 0;
+	instanceCreateInfo.enabledLayerCount = 1;
+	const char *layerNames[1];
+	layerNames[0] = "VK_LAYER_LUNARG_standard_validation";
+	instanceCreateInfo.ppEnabledLayerNames = layerNames;
 	// Extensions
-	instanceCreateInfo.enabledExtensionCount = 2;
+	instanceCreateInfo.enabledExtensionCount = 4;
 	const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
 	extensionNames[0] = "VK_KHR_surface";
 	extensionNames[1] = "VK_KHR_xcb_surface";
+	extensionNames[2] = "VK_EXT_debug_report";
+	extensionNames[3] = "VK_KHR_external_memory_capabilities";
 	instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
 	// Create instance
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance)){
@@ -996,11 +1001,11 @@ void BackendXcbVK::initTexture(int fd){
 	textureImageInfo.arrayLayers = 1;
 	textureImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	textureImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	textureImageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+	textureImageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	textureImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	textureImageInfo.queueFamilyIndexCount = 0;
 	textureImageInfo.pQueueFamilyIndices = nullptr;
-	textureImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	textureImageInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	switch(vkCreateImage(vkDevice, &textureImageInfo, nullptr, &vkTextureImage)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan create texture image] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -1091,7 +1096,7 @@ void BackendXcbVK::initTexture(int fd){
 /*** Descriptor Set **/
 	// Layout binding
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.binding = 1;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -1126,7 +1131,7 @@ void BackendXcbVK::initTexture(int fd){
 	}
 	// Descriptor set image info
 	VkDescriptorImageInfo imageInfo = {};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	imageInfo.imageView = vkTextureImageView;
 	imageInfo.sampler = vkTextureSampler;
 	// Write
@@ -1173,12 +1178,12 @@ void BackendXcbVK::initTexture(int fd){
 		renderPassInfo.framebuffer = vkSwapChainFramebuffers[i];
 		renderPassInfo.renderArea.offset = {0, 0};
 		renderPassInfo.renderArea.extent = vkDisplayExtent;
-		VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+		VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
 		renderPassInfo.clearValueCount = 1;
 		renderPassInfo.pClearValues = &clearColor;
 		vkCmdBeginRenderPass(vkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindDescriptorSets(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
 		vkCmdBindPipeline(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipeline);
+		vkCmdBindDescriptorSets(vkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
 		vkCmdDraw(vkCommandBuffers[i], 6, 1, 0, 0);
 		vkCmdEndRenderPass(vkCommandBuffers[i]);
 		switch(vkEndCommandBuffer(vkCommandBuffers[i])){

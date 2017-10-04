@@ -32,6 +32,7 @@ public:
 		AreaServerHandler *handler
 	);
 	void *data = nullptr;
+	ssize_t sendMessage(IPCMessage *message);
 private:
 	uint32_t index;
 	int clientFd;

@@ -3,7 +3,6 @@
 Greeter::Greeter():
 	vkGraphicsFamily(-1)
 {
-	VkPhysicalDevice vkPhyDevice;
 /*** Instance ***/
 	// App info
 	VkApplicationInfo appInfo = {};
@@ -17,17 +16,25 @@ Greeter::Greeter():
 	VkInstanceCreateInfo instanceCreateInfo = {};
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledLayerCount = 1;
-	const char *layerNames[1];
-	layerNames[0] = "VK_LAYER_LUNARG_standard_validation";
-	instanceCreateInfo.ppEnabledLayerNames = layerNames;
-	// Extensions
-	instanceCreateInfo.enabledExtensionCount = 3;
-	const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
-	extensionNames[0] = "VK_KHR_surface";
-	extensionNames[1] = "VK_EXT_debug_report";
-	extensionNames[2] = "VK_KHR_external_memory_capabilities";
-	instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
+	#ifdef NDEBUG
+		instanceCreateInfo.enabledLayerCount = 0;
+		// Extensions
+		instanceCreateInfo.enabledExtensionCount = 1;
+		const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
+		extensionNames[0] = "VK_KHR_surface";
+		instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
+	#else
+		instanceCreateInfo.enabledLayerCount = 1;
+		const char *layerNames[1];
+		layerNames[0] = "VK_LAYER_LUNARG_standard_validation";
+		instanceCreateInfo.ppEnabledLayerNames = layerNames;
+		// Extensions
+		instanceCreateInfo.enabledExtensionCount = 2;
+		const char *extensionNames[instanceCreateInfo.enabledExtensionCount];
+		extensionNames[0] = "VK_KHR_surface";
+		extensionNames[1] = "VK_EXT_debug_report";
+		instanceCreateInfo.ppEnabledExtensionNames = extensionNames;
+	#endif
 	// Create instance
 	switch (vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
@@ -172,14 +179,9 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	VkShaderModule vkFragmentShader;
 
 /*** Image ***/
-	// External image create info
-	VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {};
-	externalImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR;
-	externalImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 	// Image create info
 	VkImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageCreateInfo.pNext = &externalImageCreateInfo;
 	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = greeterClient->vkImageFormat;
@@ -190,7 +192,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.queueFamilyIndexCount = 0;
 	imageCreateInfo.pQueueFamilyIndices = nullptr;
@@ -205,86 +207,43 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 		default:
 		break;
 	}
-/*** External Memory ***/
+/*** Image Memory ***/
 	// Get requirement
 	VkMemoryRequirements memoryRequirement = {};
 	vkGetImageMemoryRequirements(vkDevice, greeterClient->vkPresentImage, &memoryRequirement);
 	// Allocate info
-	VkExportMemoryAllocateInfoKHR exportAllocateInfo = {};
-	exportAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR;
-	exportAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.pNext = &exportAllocateInfo;
 	memoryAllocateInfo.allocationSize = memoryRequirement.size;
-	memoryAllocateInfo.memoryTypeIndex = ffs(memoryRequirement.memoryTypeBits) - 1;
+	memoryAllocateInfo.memoryTypeIndex = findMemoryType(memoryRequirement.memoryTypeBits, 0);
 	// Allocate
-	switch(vkAllocateMemory(vkDevice, &memoryAllocateInfo, nullptr, &(greeterClient->vkExportMemory))){
+	switch(vkAllocateMemory(vkDevice, &memoryAllocateInfo, nullptr, &(greeterClient->vkPresentImageMemory))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan allocate export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+			throw "[Vulkan allocate image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan allocate export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+			throw "[Vulkan allocate image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_TOO_MANY_OBJECTS:
-			throw "[Vulkan allocate export memory] VK_ERROR_TOO_MANY_OBJECTS";
+			throw "[Vulkan allocate image memory] VK_ERROR_TOO_MANY_OBJECTS";
 		break;
 		case VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR:
-			throw "[Vulkan allocate export memory] VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR";
+			throw "[Vulkan allocate image memory] VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR";
 		break;
 		default:
 		break;
 	}
 	// Bind to image
-	switch(vkBindImageMemory(vkDevice, greeterClient->vkPresentImage, greeterClient->vkExportMemory, 0)){
+	switch(vkBindImageMemory(vkDevice, greeterClient->vkPresentImage, greeterClient->vkPresentImageMemory, 0)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan bind export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+			throw "[Vulkan bind image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan bind export memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+			throw "[Vulkan bind image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		default:
 		break;
 	}
-	// Create socket
-	greeterClient->displayFd = socket(AF_UNIX, SOCK_STREAM, 0);
-	// Fill address
-	greeterClient->displayDMAddr.sun_family = AF_UNIX;
-	strcpy(greeterClient->displayDMAddr.sun_path, connectMessage->displayFile);
-	greeterClient->displayAddr.sun_family = AF_UNIX;
-	sprintf(greeterClient->displayAddr.sun_path, "%s-greeter", connectMessage->displayFile);
-	// Bind
-	if(bind(greeterClient->displayFd, (struct sockaddr *)&(greeterClient->displayAddr), sizeof(greeterClient->displayAddr)) < 0){
-		close(greeterClient->displayFd);
-		throw "[Greeter display socket] Can't bind socket.";
-	}
-	// Connect
-	if(connect(greeterClient->displayFd, (struct sockaddr *)&(greeterClient->displayDMAddr), sizeof(greeterClient->displayDMAddr)) < 0){
-		std::cerr << strerror(errno) << std::endl;
-		close(greeterClient->displayFd);
-		throw "[Greeter display socket] Can't connect to DM display.";
-	}
-	// Get memory fd
-	VkMemoryGetFdInfoKHR getFdInfo = {};
-	getFdInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
-	getFdInfo.memory = greeterClient->vkExportMemory;
-	getFdInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-	switch(vkGetMemoryFdKHR(vkDevice, &getFdInfo, &(greeterClient->memoryFd))){
-		case VK_ERROR_TOO_MANY_OBJECTS:
-			throw "[Greeter get memory file descriptor] VK_ERROR_TOO_MANY_OBJECTS";
-		break;
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Greeter get memory file descriptor] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_EXTENSION_NOT_PRESENT:
-			throw "[Greeter get memory file descriptor] VK_ERROR_EXTENSION_NOT_PRESENT";
-		break;
-		default:
-		break;
-	}
-	// Send memory fd
-	sendDisplayFd(greeterClient->displayFd, greeterClient->memoryFd);
-
 /*** Image View ***/
 	VkImageViewCreateInfo imageViewCreateInfo = {};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -303,7 +262,72 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	if(vkCreateImageView(vkDevice, &imageViewCreateInfo, nullptr, &(greeterClient->vkPresentImageView))!= VK_SUCCESS){
 		throw "[Vulkan image view] Error create image view.";
 	}
-
+/*** Staging Image ***/
+	VkImageCreateInfo stagingImageCreateInfo = {};
+	stagingImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	stagingImageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	stagingImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	stagingImageCreateInfo.format = greeterClient->vkImageFormat;
+	stagingImageCreateInfo.extent.width = greeterClient->vkImageExtent.width;
+	stagingImageCreateInfo.extent.height = greeterClient->vkImageExtent.height;
+	stagingImageCreateInfo.extent.depth = 1;
+	stagingImageCreateInfo.mipLevels = 1;
+	stagingImageCreateInfo.arrayLayers = 1;
+	stagingImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	stagingImageCreateInfo.tiling = VK_IMAGE_TILING_LINEAR;
+	stagingImageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	stagingImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	stagingImageCreateInfo.queueFamilyIndexCount = 0;
+	stagingImageCreateInfo.pQueueFamilyIndices = nullptr;
+	stagingImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	switch(vkCreateImage(vkDevice, &stagingImageCreateInfo, nullptr, &(greeterClient->vkStagingImage))){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan create staging image] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan create staging image] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+/*** Staging memory ***/
+	// Get requirement
+	VkMemoryRequirements stagingMemoryRequirement = {};
+	vkGetImageMemoryRequirements(vkDevice, greeterClient->vkStagingImage, &stagingMemoryRequirement);
+	// Allocate info
+	VkMemoryAllocateInfo stagingmemoryAllocateInfo = {};
+	stagingmemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	stagingmemoryAllocateInfo.allocationSize = stagingMemoryRequirement.size;
+	greeterClient->memSize = stagingMemoryRequirement.size;
+	stagingmemoryAllocateInfo.memoryTypeIndex = findMemoryType(stagingMemoryRequirement.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	// Allocate
+	switch(vkAllocateMemory(vkDevice, &stagingmemoryAllocateInfo, nullptr, &(greeterClient->vkStagingImageMemory))){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan allocate image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan allocate image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_TOO_MANY_OBJECTS:
+			throw "[Vulkan allocate image memory] VK_ERROR_TOO_MANY_OBJECTS";
+		break;
+		case VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR:
+			throw "[Vulkan allocate image memory] VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR";
+		break;
+		default:
+		break;
+	}
+	// Bind to image
+	switch(vkBindImageMemory(vkDevice, greeterClient->vkStagingImage, greeterClient->vkStagingImageMemory, 0)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan bind staging image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan bind staging image memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		default:
+		break;
+	}
 
 /*** Shader ***/
 	// Vertex shader
@@ -420,7 +444,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	// Color attachment ref
 	VkAttachmentReference colorAttachmentRef = {};
 	colorAttachmentRef.attachment = 0;
@@ -431,13 +455,13 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	// Subpass dependency
-	VkSubpassDependency dependency = {};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	VkSubpassDependency dependencies = {};
+	dependencies.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies.dstSubpass = 0;
+	dependencies.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies.srcAccessMask = 0;
+	dependencies.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	dependencies.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
 	// Render pass
 	VkRenderPassCreateInfo renderPassCreateInfo = {};
 	renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -446,7 +470,7 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpass;
 	renderPassCreateInfo.dependencyCount = 1;
-	renderPassCreateInfo.pDependencies = &dependency;
+	renderPassCreateInfo.pDependencies = &dependencies;
 	switch(vkCreateRenderPass(vkDevice, &renderPassCreateInfo, nullptr, &(greeterClient->vkRenderPass))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan render pass] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -510,6 +534,31 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 		default:
 		break;
 	}
+/*** Copy event ***/
+	// Create
+	VkEventCreateInfo imageCopyEventInfo = {};
+	imageCopyEventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+	switch(vkCreateEvent(vkDevice, &imageCopyEventInfo, nullptr, &(greeterClient->vkImageCopyEvent))){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan create event] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan create event] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+	// Set event
+	switch(vkSetEvent(vkDevice, greeterClient->vkImageCopyEvent)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan set event] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan set event] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
 /*** Command pool ***/
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -562,6 +611,68 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 	vkCmdBindPipeline(greeterClient->vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, greeterClient->vkGraphicsPipeline);
 	vkCmdDraw(greeterClient->vkCommandBuffer, 3, 1, 0, 0);
 	vkCmdEndRenderPass(greeterClient->vkCommandBuffer);
+	// Image barrier
+	VkImageSubresourceRange subresourceRange = {};
+	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.baseMipLevel = 0;
+	subresourceRange.levelCount = 1;
+	subresourceRange.baseArrayLayer = 0;
+	subresourceRange.layerCount = 1;
+	VkImageMemoryBarrier stagingImageMemoryBarrier = {};
+	stagingImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	stagingImageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	stagingImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	stagingImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	stagingImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	stagingImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	stagingImageMemoryBarrier.image = greeterClient->vkStagingImage;
+	stagingImageMemoryBarrier.subresourceRange = subresourceRange;
+	vkCmdPipelineBarrier(greeterClient->vkCommandBuffer,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_DEPENDENCY_BY_REGION_BIT,
+		0, nullptr,
+		0, nullptr,
+		1, &stagingImageMemoryBarrier
+	);
+	// Wait for host copy complete
+	vkCmdWaitEvents(greeterClient->vkCommandBuffer,
+		1,
+		&(greeterClient->vkImageCopyEvent),
+		VK_PIPELINE_STAGE_HOST_BIT,
+		VK_PIPELINE_STAGE_HOST_BIT,
+		0, nullptr,
+		0, nullptr,
+		0, nullptr
+	);
+	// Copy to staging tmage
+	VkImageSubresourceLayers subResourceLayer = {};
+	subResourceLayer.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subResourceLayer.mipLevel = 0;
+	subResourceLayer.baseArrayLayer = 0;
+	subResourceLayer.layerCount = 1;
+	VkOffset3D imageCopyOffset = {};
+	imageCopyOffset.x = 0;
+	imageCopyOffset.y = 0;
+	imageCopyOffset.z = 0;
+	VkExtent3D imageCopyExtent = {};
+	imageCopyExtent.width = greeterClient->vkImageExtent.width;
+	imageCopyExtent.height = greeterClient->vkImageExtent.height;
+	imageCopyExtent.depth = 1;
+	VkImageCopy imageCopy = {};
+	imageCopy.srcSubresource = subResourceLayer;
+	imageCopy.srcOffset = imageCopyOffset;
+	imageCopy.dstSubresource = subResourceLayer;
+	imageCopy.dstOffset = imageCopyOffset;
+	imageCopy.extent = imageCopyExtent;
+	vkCmdCopyImage(greeterClient->vkCommandBuffer,
+		greeterClient->vkPresentImage,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		greeterClient->vkStagingImage,
+		VK_IMAGE_LAYOUT_GENERAL,
+		1,
+		&imageCopy
+	);
 	switch(vkEndCommandBuffer(greeterClient->vkCommandBuffer)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan command buffer record] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -572,19 +683,22 @@ void Greeter::initClient(IPCMessage *message, AreaClient *client){
 		default:
 		break;
 	}
-/*** Create semaphore ***/
-	VkSemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	switch(vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &(greeterClient->vkImageAvailableSemaphore))){
+/*** Create fence ***/
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	switch(vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &(greeterClient->vkStartTransferFence))){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan image available semaphore] VK_ERROR_OUT_OF_HOST_MEMORY";
+			throw "[Vulkan create fence] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan image available semaphore] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+			throw "[Vulkan create fence] VK_ERROR_OUT_OF_DEVICE_MEMORY";
 		break;
 		default:
 		break;
 	}
+/*** Transfer thread ***/
+	greeterClient->isPainting = true;
+	greeterClient->transferThread = new std::thread(GreeterClient::texelTransfer, client, this);
 }
 void Greeter::handleMessage(IPCMessage *message, AreaClient *client){
 	switch(message->type){
@@ -596,16 +710,6 @@ void Greeter::handleMessage(IPCMessage *message, AreaClient *client){
 		}break;
 		default:
 		break;
-	}
-}
-
-VkResult Greeter::vkGetMemoryFdKHR(VkDevice device,  const VkMemoryGetFdInfoKHR *pGetFdInfo, int* pFd){
-	auto func = (PFN_vkGetMemoryFdKHR) vkGetInstanceProcAddr(vkInstance, "vkGetMemoryFdKHR");
-	if (func != nullptr) {
-		 VkResult res = func(device, pGetFdInfo, pFd);
-		 return res;
-	}else{
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
 	}
 }
 
@@ -646,15 +750,13 @@ void Greeter::paint(GreeterClient *client){
 	// Submit command buffer
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TRANSFER_BIT};
 	submitInfo.waitSemaphoreCount = 0;
-	//submitInfo.pWaitSemaphores = &(client->vkImageAvailableSemaphore);
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &(client->vkCommandBuffer);
 	submitInfo.signalSemaphoreCount = 0;
-	//submitInfo.pSignalSemaphores = &(client->vkImageAvailableSemaphore);
-	switch(vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE)){
+	switch(vkQueueSubmit(vkGraphicsQueue, 1, &submitInfo, client->vkStartTransferFence)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan queue submit] VK_ERROR_OUT_OF_HOST_MEMORY";
 		break;
@@ -668,39 +770,81 @@ void Greeter::paint(GreeterClient *client){
 		break;
 	}
 }
-
-void Greeter::sendDisplayFd(int sockfd, int memfd){
-	struct iovec iov;
-    struct msghdr msg;
-	char buf[2];
-	struct cmsghdr *cmptr;
-
-    iov.iov_base = buf;
-    iov.iov_len  = 2;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    if (memfd < 0) {
-        msg.msg_control = NULL;
-        msg.msg_controllen = 0;
-        buf[1] = -memfd;
-        if (buf[1] == 0)
-            buf[1] = 1;
-    } else {
-        if ((cmptr = (struct cmsghdr *)malloc(CMSG_LEN(sizeof(int)))) == nullptr){
-			throw "[Greeter send memory file descriptor] Can't create control message header.";
+int32_t Greeter::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties){
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(vkPhyDevice, &memProperties);
+	for(int32_t i = 0; i < 32; ++i){
+		if ((memoryTypeBits & (1 << i)) && ((memProperties.memoryTypes[i].propertyFlags & properties) == properties)){
+			return i;
 		}
-        cmptr->cmsg_level  = SOL_SOCKET;
-        cmptr->cmsg_type   = SCM_RIGHTS;
-        cmptr->cmsg_len    = CMSG_LEN(sizeof(int));
-        msg.msg_control    = cmptr;
-        msg.msg_controllen = CMSG_LEN(sizeof(int));
-        *(int *)CMSG_DATA(cmptr) = memfd;
-        buf[1] = 0;
-    }
-    buf[0] = 0;
-    if(sendmsg(sockfd, &msg, 0) != 2){
-		throw "[Greeter send memory file descriptor] Error sending file descriptor.";
+	}
+	return -1;
+}
+void GreeterClient::texelTransfer(AreaClient *client, Greeter *greeter){
+	GreeterClient *greeterClient = (GreeterClient *)client->data;
+	while(greeterClient->isPainting){
+		// Wait for transfer fence
+		if(vkWaitForFences(greeter->vkDevice, 1, &(greeterClient->vkStartTransferFence), VK_TRUE, 3000000000) == VK_SUCCESS){
+			// Reset fence
+			switch(vkResetFences(greeter->vkDevice, 1, &(greeterClient->vkStartTransferFence))){
+				case VK_ERROR_OUT_OF_HOST_MEMORY:
+					throw "[Vulkan reset fence] VK_ERROR_OUT_OF_HOST_MEMORY";
+				break;
+				case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+					throw "[Vulkan reset fence] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				break;
+				default:
+				break;
+			}
+			// Reset event
+			switch(vkResetEvent(greeter->vkDevice, greeterClient->vkImageCopyEvent)){
+				case VK_ERROR_OUT_OF_HOST_MEMORY:
+					throw "[Vulkan reset event] VK_ERROR_OUT_OF_HOST_MEMORY";
+				break;
+				case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+					throw "[Vulkan reset event] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				break;
+				default:
+				break;
+			}
+			// Map memory
+			char *memPtr = nullptr;
+			switch(vkMapMemory(greeter->vkDevice, greeterClient->vkStagingImageMemory, 0, greeterClient->memSize, 0, (void **)&memPtr)){
+				case VK_ERROR_OUT_OF_HOST_MEMORY:
+					throw "[Vulkan map memory] VK_ERROR_OUT_OF_HOST_MEMORY";
+				break;
+				case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+					throw "[Vulkan map memory] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				break;
+				case VK_ERROR_MEMORY_MAP_FAILED:
+					throw "[Vulkan map memory] VK_ERROR_MEMORY_MAP_FAILED";
+				break;
+				default:
+				break;
+			}
+			// IPC message header
+			IPCMessage frameMessage;
+			frameMessage.type = IPC_Frame;
+			frameMessage.length = sizeof(frameMessage) + greeterClient->memSize;
+			// Copy memory
+			std::vector<char> frameData(sizeof(frameMessage) + greeterClient->memSize);
+			memcpy(frameData.data(), &frameMessage, sizeof(frameMessage));
+			memcpy(frameData.data() + sizeof(frameMessage), memPtr, greeterClient->memSize);
+			// Unmap memory
+			vkUnmapMemory(greeter->vkDevice, greeterClient->vkStagingImageMemory);
+			// Set event
+			switch(vkResetEvent(greeter->vkDevice, greeterClient->vkImageCopyEvent)){
+				case VK_ERROR_OUT_OF_HOST_MEMORY:
+					throw "[Vulkan reset event] VK_ERROR_OUT_OF_HOST_MEMORY";
+				break;
+				case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+					throw "[Vulkan reset event] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+				break;
+				default:
+				break;
+			}
+			// Send message
+			client->sendMessage((IPCMessage *)frameData.data());
+		}
 	}
 }

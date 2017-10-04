@@ -239,12 +239,13 @@ BackendXcbVK::BackendXcbVK():
 	for(int i = 0; i < 2; ++i){
 		VkDeviceQueueCreateInfo queueCreateInfo = {};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = graphicsFamily;
 		queueCreateInfo.queueCount = 1;
 		float queuePriority = 1.0f;
 		queueCreateInfo.pQueuePriorities = &queuePriority;
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
+	queueCreateInfos[0].queueFamilyIndex = graphicsFamily;
+	queueCreateInfos[1].queueFamilyIndex = presentFamily;
 	// Create logical device
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	VkDeviceCreateInfo logicalDeviceCreateInfo = {};
@@ -619,6 +620,25 @@ BackendXcbVK::BackendXcbVK():
 		default:
 		break;
 	}
+/*** Pipeline layout ***/
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges = 0;
+	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
+			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
 /*** Graphics pipeline ***/
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -637,6 +657,7 @@ BackendXcbVK::BackendXcbVK():
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
+	pipelineInfo.layout = vkPipelineLayout;
 	switch(vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkGraphicsPipeline)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 		vkDestroyRenderPass(vkDevice, vkRenderPass, nullptr);
@@ -983,14 +1004,9 @@ void BackendXcbVK::paint(){
 void BackendXcbVK::initTexture(int fd){
 	VkDescriptorSetLayout vkDescriptorSetLayout;
 /*** Texture image ***/
-	// External image create info
-	VkExternalMemoryImageCreateInfoKHR externalImageCreateInfo = {};
-	externalImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR;
-	externalImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 	// Image crate info
 	VkImageCreateInfo textureImageInfo = {};
 	textureImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	textureImageInfo.pNext = &externalImageCreateInfo;
 	textureImageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 	textureImageInfo.imageType = VK_IMAGE_TYPE_2D;
 	textureImageInfo.format = vkSurfaceFormat.format;
@@ -1005,7 +1021,7 @@ void BackendXcbVK::initTexture(int fd){
 	textureImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	textureImageInfo.queueFamilyIndexCount = 0;
 	textureImageInfo.pQueueFamilyIndices = nullptr;
-	textureImageInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	textureImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	switch(vkCreateImage(vkDevice, &textureImageInfo, nullptr, &vkTextureImage)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan create texture image] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -1021,13 +1037,8 @@ void BackendXcbVK::initTexture(int fd){
 	VkMemoryRequirements textureMemoryRequirement = {};
 	vkGetImageMemoryRequirements(vkDevice, vkTextureImage, &textureMemoryRequirement);
 	// Allocate info
-	VkImportMemoryFdInfoKHR importAllocateInfo = {};
-	importAllocateInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR;
-	importAllocateInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-	importAllocateInfo.fd = fd;
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.pNext = &importAllocateInfo;
 	memoryAllocateInfo.allocationSize = textureMemoryRequirement.size;
 	memoryAllocateInfo.memoryTypeIndex = ffs(textureMemoryRequirement.memoryTypeBits) - 1;
 	// Allocate
@@ -1093,7 +1104,7 @@ void BackendXcbVK::initTexture(int fd){
 	if(vkCreateSampler(vkDevice, &samplerInfo, nullptr, &vkTextureSampler)!= VK_SUCCESS){
 		throw "[Vulkan texture sampler] Error create sampler.";
 	}
-/*** Descriptor Set **/
+/*** Descriptor Set ***/
 	// Layout binding
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 	samplerLayoutBinding.binding = 1;
@@ -1144,25 +1155,7 @@ void BackendXcbVK::initTexture(int fd){
 	descriptorWrite.descriptorCount = 1;
 	descriptorWrite.pImageInfo = &imageInfo;
 	vkUpdateDescriptorSets(vkDevice, 1, &descriptorWrite, 0, nullptr);
-/*** Pipeline layout ***/
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = 0;
-	switch(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &vkPipelineLayout)){
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, nullptr);
-			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-		break;
-		default:
-		break;
-	}
+
 /*** Command buffer record ***/
 	for(uint32_t i = 0; i < vkCommandBuffers.size(); ++i) {
 		VkCommandBufferBeginInfo beginInfo = {};

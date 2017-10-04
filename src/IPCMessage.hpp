@@ -7,7 +7,8 @@
 #include <queue>
 
 enum IPCType{
-	IPC_Connect
+	IPC_Connect,
+	IPC_Frame
 };
 
 class IPCMessage{
@@ -33,7 +34,11 @@ class IPCConnectMessage: public IPCMessage{
 public:
 	VkFormat format;
 	VkExtent2D extent;
-	char displayFile[108];
+};
+
+class IPCFrameMessage: public IPCMessage{
+public:
+	char* dataBytes;
 };
 
 #endif

@@ -118,3 +118,7 @@ void AreaServer::eraseClient(uint32_t index){
 	delete *it;
 	clients.erase(it);
 }
+
+ssize_t AreaClient::sendMessage(IPCMessage *message){
+	return send(clientFd, message, message->length, 0);
+}

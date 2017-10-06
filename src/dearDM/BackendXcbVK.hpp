@@ -18,8 +18,8 @@ class BackendXcbVK : public BackendBase{
 public:
 	BackendXcbVK();
 	~BackendXcbVK();
-	void paint();
-	void initTexture(int fd);
+	void paint(IPCFrameMessage *message);
+	void initTexture();
 private:
 	xcb_connection_t *xcbConnection = nullptr;
 	xcb_window_t xcbWindow;

@@ -34,11 +34,6 @@ private:
 	IPCMessageQueue *messageQueue = nullptr;
 	struct event_base *eventBase;
 
-	evutil_socket_t displayFd;
-	struct sockaddr_un displayAddr;
-	std::atomic<bool> isPainting;
-	std::thread *paintThread;
-
 	static void socketReceive(evutil_socket_t fd, short event, void *arg);
 	void messageHandler(IPCMessage *message);
 };

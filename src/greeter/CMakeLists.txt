@@ -10,4 +10,5 @@ add_executable(dear-greeter
 	main.cpp
 	Greeter.cpp
 	../area/Server.cpp
+	../area/Client.cpp
 )

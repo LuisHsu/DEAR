@@ -2,8 +2,7 @@
 
 AreaNode::AreaNode(const char *path, BackendBase *backend):
 	backend(backend),
-	messageQueue(new IPCMessageQueue(10)),
-	isPainting(false)
+	messageQueue(new IPCMessageQueue(10))
 {
 /*** IPC socket ***/
 	// Create socket
@@ -25,7 +24,6 @@ AreaNode::AreaNode(const char *path, BackendBase *backend):
 		throw "[DearDM area node] Can't connect to server.";
 	}
 /*** Event ***/
-	evutil_make_socket_nonblocking(socketFd);
 	eventBase = event_base_new();
 	if(eventBase == nullptr){
 		std::cerr << strerror(errno) << std::endl;
@@ -39,11 +37,7 @@ AreaNode::AreaNode(const char *path, BackendBase *backend):
 	event_base_dispatch(eventBase);
 }
 AreaNode::~AreaNode(){
-	isPainting = false;
-	paintThread->join();
-	delete paintThread;
 	unlink(clientAddr.sun_path);
-	unlink(displayAddr.sun_path);
 	delete messageQueue;
 }
 void AreaNode::socketReceive(evutil_socket_t socketFd, short event, void *arg){
@@ -77,7 +71,7 @@ void AreaNode::messageHandler(IPCMessage *message){
 	switch(message->type){
 		case IPC_Connect:{
 			// Init texture
-			backend->initTexture(displayFd);
+			backend->initTexture();
 			// Send connect message
 			IPCConnectMessage connectMessage;
 			connectMessage.type = IPC_Connect;
@@ -88,6 +82,11 @@ void AreaNode::messageHandler(IPCMessage *message){
 				close(socketFd);
 				throw "[DearDM area node] Can't send connect message.";
 			}
+		}break;
+		case IPC_Frame:{
+			IPCFrameMessage *frameMessage = (IPCFrameMessage *)message;
+			frameMessage->dataBytes = (char *)&(frameMessage->dataBytes);
+			backend->paint(frameMessage);
 		}break;
 		default:
 		break;

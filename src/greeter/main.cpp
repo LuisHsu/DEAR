@@ -1,5 +1,5 @@
 #include <iostream>
-#include <Server.hpp>
+#include <AreaSocket.hpp>
 #include <Greeter.hpp>
 
 int main(int argc, char *argv[]){

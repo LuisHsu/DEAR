@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <IPCMessage.hpp>
 #include <vulkan/vulkan.hpp>
 
 class BackendBase{
@@ -13,17 +14,16 @@ public:
 
 	BackendBase(SurfType surf);
 	virtual ~BackendBase();
-	virtual void paint() = 0;
-	virtual void initTexture(int fd) = 0;
+	virtual void paint(IPCFrameMessage *message) = 0;
+	virtual void initTexture() = 0;
 
+	VkPhysicalDevice vkPhyDevice;
 	VkInstance vkInstance;
 	VkDevice vkDevice;
 	VkSurfaceKHR vkSurface;
 	VkQueue vkGraphicsQueue;
 	VkQueue vkPresentQueue;
 	VkSwapchainKHR vkSwapChain;
-	VkRenderPass vkRenderPass;
-	VkPipeline vkGraphicsPipeline;
 	VkCommandPool vkCommandPool;
 	VkExtent2D vkDisplayExtent;
 	VkSurfaceFormatKHR vkSurfaceFormat;
@@ -31,16 +31,11 @@ public:
 	VkSemaphore vkRenderFinishedSemaphore;
 	VkImage vkTextureImage;
 	VkDeviceMemory vkTextureMemory;
-	VkImageView vkTextureImageView;
-	VkSampler vkTextureSampler;
-	VkDescriptorPool vkDescriptorPool;
-	VkDescriptorSet vkDescriptorSet;
-	VkPipelineLayout vkPipelineLayout;
+	VkFence vkMapTextureFence;
 	std::vector<VkImage> vkSwapChainImages;
-	std::vector<VkImageView> vkSwapChainImageViews;
-	std::vector<VkFramebuffer> vkSwapChainFramebuffers;
 	std::vector<VkCommandBuffer> vkCommandBuffers;
-	VkShaderModule createShaderModule(const char *fileName);
+	int32_t memSize;
+	int32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties);
 };
 
 #endif

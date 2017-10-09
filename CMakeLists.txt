@@ -24,4 +24,4 @@ endif(XCB_SUPPORT)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/frag)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/vert)
 
-#add_subdirectory(src/area)
+add_subdirectory(src/message)

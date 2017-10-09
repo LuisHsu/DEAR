@@ -1,12 +1,10 @@
-# DEAR Desktop
+# Dear Desktop
 
-Desktop Environment for Augmented and virtual Reality
+Dear Desktop manager
 
 ## Dependency
 
-+ Wayland-client Wayland-server Wayland-protocol
-
-+ libevent2
++ libuv v1.15
 
 + Vulkan [optional]
 

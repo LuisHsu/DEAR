@@ -60,15 +60,20 @@ void TCPServer::start(){
 				messageBuf.resize(messageBuf.size() + len);
 				// Copy data
 				memcpy(messageBuf.data() + messageBuf.size() - len, buf->base, len);
+				// Free buffer
+				delete [] buf->base;
 				// Dealing with message
 				char *cur = messageBuf.data();
-				for(int32_t remain = messageBuf.size(); remain >= (int32_t)sizeof(Message) && remain >= ((Message *)cur)->length;){
+				for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
 					tcpServer->handler->handleMessage((Message *)cur, tcpServer);
 					int msgLen = ((Message *)cur)->length;
 					cur += msgLen;
 					remain -= msgLen;
 				}
-				messageBuf.erase(messageBuf.begin(), messageBuf.begin() + (cur - messageBuf.data()));
+				// Erase data
+				if(cur != messageBuf.data()){
+					messageBuf.erase(messageBuf.begin(), messageBuf.begin() + (cur - messageBuf.data()));
+				}
 			});
 		}
 	});

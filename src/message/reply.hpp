@@ -1,7 +1,6 @@
-#ifndef REQUEST_DEF
-#define REQUEST_DEF
+#ifndef REPLY_DEF
+#define REPLY_DEF
 
 #include <message/messageBase.hpp>
-
 
 #endif

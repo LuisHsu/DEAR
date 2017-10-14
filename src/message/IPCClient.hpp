@@ -8,13 +8,14 @@ extern "C"{
 #include <iostream>
 #include <vector>
 #include <cstring>
-#include <message.hpp>
+#include <message/message.hpp>
 
 class IPCClient{
 public:
 	IPCClient(uv_loop_t *loop, MessageHandler *handler);
 	~IPCClient();
 	void start(const char *path);
+	void sendMessage(Message *message, uv_write_cb callback = nullptr, void *callbackData = nullptr);
 private:
 	uv_loop_t *uvLoop;
 	uv_pipe_t clientPipe;

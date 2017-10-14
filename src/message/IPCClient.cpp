@@ -33,22 +33,36 @@ void IPCClient::start(const char *path){
 			std::vector<char> &messageBuf = ipcClient->messageBuf;
 			// Handing error
 			if(len < 0){
-				std::cerr << "[IPCClient] Error receiving from server." << std::endl;
+				std::cerr << "[IPCClient] Server disconnected." << std::endl;
 				return;
 			}
 			// Append buf
 			messageBuf.resize(messageBuf.size() + len);
 			// Copy data
 			memcpy(messageBuf.data() + messageBuf.size() - len, buf->base, len);
+			// Free buffer
+			delete [] buf->base;
 			// Dealing with message
 			char *cur = messageBuf.data();
-			for(int32_t remain = messageBuf.size(); remain >= (int32_t)sizeof(Message) && remain >= ((Message *)cur)->length;){
+			for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
 				ipcClient->handler->handleMessage((Message *)cur, ipcClient);
 				int msgLen = ((Message *)cur)->length;
 				cur += msgLen;
 				remain -= msgLen;
 			}
-			messageBuf.erase(messageBuf.begin(), messageBuf.begin() + (cur - messageBuf.data()));
+			// Erase data
+			if(cur != messageBuf.data()){
+				messageBuf.erase(messageBuf.begin(), messageBuf.begin() + (cur - messageBuf.data()));
+			}
 		});
 	});
+}
+void IPCClient::sendMessage(Message *message, uv_write_cb callback , void *callbackData){
+	uv_write_t *req = new uv_write_t;
+	req->data = callbackData;
+	uv_buf_t buf = {
+		.base = (char *)message,
+		.len = message->length
+	};
+	uv_write(req, (uv_stream_t *)&clientPipe, &buf, 1, callback);
 }

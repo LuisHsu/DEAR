@@ -1,7 +1,8 @@
 #ifndef MESSAGE_DEF
 #define MESSAGE_DEF
 
-#include <request.hpp>
+#include <message/request.hpp>
+#include <message/reply.hpp>
 
 class MessageHandler{
 public:

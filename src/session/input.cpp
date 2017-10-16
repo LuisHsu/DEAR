@@ -1,7 +1,7 @@
 #include "input.hpp"
 
-Input::Input(uv_loop_t *loop):
-	loop(loop)
+Input::Input(uv_loop_t *loop, IPCClient *client):
+	loop(loop), client(client)
 {
 	// Create new udev context
 	struct udev *udev_ = udev_new();
@@ -28,26 +28,26 @@ Input::Input(uv_loop_t *loop):
 		Input *input = (Input *) handle->data;
 		libinput_dispatch(input->inputCtx);
 		struct libinput_event *event = libinput_get_event(input->inputCtx);
-		switch(libinput_event_get_type(event)){
-			case LIBINPUT_EVENT_KEYBOARD_KEY:
-				input->keyboardKey(event);
-			break;
-			case LIBINPUT_EVENT_POINTER_MOTION:
-				input->pointerMotion(event);
-			break;
-			case LIBINPUT_EVENT_POINTER_MOTION_ABSOLUTE:
-				input->pointerMotionAbsolute(event);
-			break;
-			case LIBINPUT_EVENT_POINTER_BUTTON:
-				input->pointerButton(event);
-			break;
-			case LIBINPUT_EVENT_POINTER_AXIS:
-				input->pointerAxis(event);
-			break;
-			default: 
-			break;
-		}
 		if(event){
+			switch(libinput_event_get_type(event)){
+				case LIBINPUT_EVENT_KEYBOARD_KEY:
+					input->keyboardKey(event);
+				break;
+				case LIBINPUT_EVENT_POINTER_MOTION:
+					input->pointerMotion(event);
+				break;
+				case LIBINPUT_EVENT_POINTER_MOTION_ABSOLUTE:
+					input->pointerMotionAbsolute(event);
+				break;
+				case LIBINPUT_EVENT_POINTER_BUTTON:
+					input->pointerButton(event);
+				break;
+				case LIBINPUT_EVENT_POINTER_AXIS:
+					input->pointerAxis(event);
+				break;
+				default: 
+				break;
+			}
 			libinput_event_destroy(event);
 		}
 	});
@@ -61,13 +61,24 @@ int Input::open_restricted(const char *path, int flags, void *user_data){
 	}
 	return fd;
 }
-
 void Input::close_restricted(int fd, void *user_data){
 	close(fd);
 }
 
 void Input::keyboardKey(struct libinput_event *event){
-
+	struct libinput_event_keyboard *kbevent = libinput_event_get_keyboard_event(event);
+	if(kbevent){
+		KeyboardRequest *request = new KeyboardRequest;
+		request->type = (libinput_event_keyboard_get_key_state(kbevent) == LIBINPUT_KEY_STATE_PRESSED) ? KeyDown_request : KeyUp_request; 
+		request->length = sizeof(*request);
+		request->time = libinput_event_keyboard_get_time(kbevent);
+		request->utime = libinput_event_keyboard_get_time_usec(kbevent);
+		request->key = codeMap[libinput_event_keyboard_get_key(kbevent)];
+		request->count = libinput_event_keyboard_get_seat_key_count(kbevent);
+		client->sendMessage(request, [](uv_write_t* req, int status){
+			delete (KeyboardRequest *)req->data;
+		}, request);
+	}
 }
 void Input::pointerMotion(struct libinput_event *event){
 

@@ -2,7 +2,7 @@
 #define DEAR_MESSAGE_DEF
 
 #include "request.hpp"
-#include "reply.hpp"
+#include "notice.hpp"
 
 class MessageHandler{
 public:

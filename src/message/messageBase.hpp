@@ -3,14 +3,16 @@
 
 #include <cstdint>
 
-enum MsgType{
-	IPC_Connect_req,
-	IPC_Connect_rep
+enum MessageType{
+	IPC_Connect_request,
+	IPC_Connect_notice,
+	KeyDown_request,
+	KeyUp_request
 };
 
 class Message{
 public:
-	MsgType type;
+	MessageType type;
 	uint32_t length;
 };
 

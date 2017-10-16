@@ -20,8 +20,9 @@ public:
 private:
 	uv_loop_t *uvLoop;
 	uv_pipe_t serverPipe;
-	uv_pipe_t clientPipe;
+	uv_pipe_t *clientPipe = nullptr;
 	MessageHandler *handler;
+	bool connecting;
 	std::vector<char> messageBuf;
 };
 

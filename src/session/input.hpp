@@ -10,21 +10,27 @@ extern "C"{
 	#include <sys/stat.h>
 	#include <fcntl.h>
 	#include <unistd.h>
+	#include <linux/input.h>
 }
 
 #include <iostream>
 #include <cstdio>
 #include <map>
 
+#include <message/message.hpp>
+#include <message/IPCClient.hpp>
+#include <inputCode.hpp>
+
 class Input{
 public:
-	Input(uv_loop_t *loop);
+	Input(uv_loop_t *loop, IPCClient *client);
 
 private:
 	uv_loop_t *loop;
 	uv_poll_t uvPoll;
 	struct libinput *inputCtx;
-	static std::map<uint32_t, uint32_t> keymap;
+	IPCClient *client;
+	static std::map<uint32_t, uint32_t> codeMap;
 	static int open_restricted(const char *path, int flags, void *user_data);
 	static void close_restricted(int fd, void *user_data);
 	void keyboardKey(struct libinput_event *event);

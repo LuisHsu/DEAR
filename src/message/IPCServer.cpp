@@ -1,4 +1,4 @@
-#include <IPCServer.hpp>
+#include "IPCServer.hpp"
 
 IPCServer::IPCServer(uv_loop_t *loop, const char *path, MessageHandler *handler):
 	uvLoop(loop), handler(handler)

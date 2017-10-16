@@ -1,4 +1,4 @@
-#include <area/area.hpp>
+#include "area.hpp"
 
 void Area::handleMessage(Message *message, void *server){
 	switch(message->type){

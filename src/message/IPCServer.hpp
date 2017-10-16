@@ -1,5 +1,5 @@
-#ifndef IPCSERVER_DEF
-#define IPCSERVER_DEF
+#ifndef DEAR_IPCSERVER_DEF
+#define DEAR_IPCSERVER_DEF
 
 extern "C"{
 	#include <uv.h>

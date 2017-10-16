@@ -1,5 +1,5 @@
-#ifndef MESSAGEBASE_DEF
-#define MESSAGEBASE_DEF
+#ifndef DEAR_MESSAGEBASE_DEF
+#define DEAR_MESSAGEBASE_DEF
 
 #include <cstdint>
 

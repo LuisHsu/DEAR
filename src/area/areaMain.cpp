@@ -6,7 +6,7 @@ extern "C"{
 }
 
 #include <message/IPCServer.hpp>
-#include <area.hpp>
+#include "area.hpp"
 
 int main(void){
 	// Create IPC directory

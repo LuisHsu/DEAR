@@ -8,6 +8,10 @@ Dear Desktop manager
 
 + libudev
 
-+ Vulkan [optional]
++ libsystemd
 
-+ XCB [optional]
++ libinput
+
++ Vulkan & libvulkan
+
++ libxcb libx11 libx11-xcb

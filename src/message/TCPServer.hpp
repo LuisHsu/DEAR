@@ -1,5 +1,5 @@
-#ifndef TCPSERVER_DEF
-#define TCPSERVER_DEF
+#ifndef DEAR_TCPSERVER_DEF
+#define DEAR_TCPSERVER_DEF
 
 extern "C"{
 	#include <unistd.h>
@@ -12,7 +12,8 @@ extern "C"{
 #include <vector>
 #include <list>
 #include <cstring>
-#include <message.hpp>
+
+#include "message.hpp"
 
 class TCPServer{
 public:

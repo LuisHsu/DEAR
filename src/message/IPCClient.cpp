@@ -1,4 +1,4 @@
-#include <IPCClient.hpp>
+#include "IPCClient.hpp"
 
 IPCClient::IPCClient(uv_loop_t *loop, MessageHandler *handler):
 	uvLoop(loop), handler(handler)

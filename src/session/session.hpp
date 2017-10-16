@@ -1,5 +1,5 @@
-#ifndef SESSION_DEF
-#define SESSION_DEF
+#ifndef DEAR_SESSION_DEF
+#define DEAR_SESSION_DEF
 
 #include <message/message.hpp>
 

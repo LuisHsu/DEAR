@@ -1,5 +1,5 @@
-#ifndef REQUEST_DEF
-#define REQUEST_DEF
+#ifndef DEAR_REQUEST_DEF
+#define DEAR_REQUEST_DEF
 
 #include <message/messageBase.hpp>
 

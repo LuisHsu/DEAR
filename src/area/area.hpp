@@ -1,5 +1,5 @@
-#ifndef AREA_DEF
-#define AREA_DEF
+#ifndef DEAR_AREA_DEF
+#define DEAR_AREA_DEF
 
 #include <message/message.hpp>
 

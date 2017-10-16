@@ -1,5 +1,5 @@
-#ifndef IPCCLIENT_DEF
-#define IPCCLIENT_DEF
+#ifndef DEAR_IPCCLIENT_DEF
+#define DEAR_IPCCLIENT_DEF
 
 extern "C"{
 	#include <uv.h>

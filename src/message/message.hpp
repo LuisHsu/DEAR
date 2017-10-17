@@ -6,7 +6,12 @@
 
 class MessageHandler{
 public:
-	virtual void handleMessage(Message *message, void *server) = 0;
+	enum DeliverType{
+		DEAR_MESSAGE_Client,
+		DEAR_MESSAGE_IPCserver,
+		DEAR_MESSAGE_TCPserver
+	};
+	virtual void handleMessage(Message *message, void *deliver, DeliverType type = DEAR_MESSAGE_Client, void *data = nullptr) = 0;
 };
 
 #endif

@@ -66,3 +66,7 @@ void IPCClient::sendMessage(Message *message, uv_write_cb callback , void *callb
 	};
 	uv_write(req, (uv_stream_t *)&clientPipe, &buf, 1, callback);
 }
+
+void IPCClient::stop(){
+	uv_stop(uvLoop);
+}

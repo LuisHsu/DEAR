@@ -65,7 +65,7 @@ void TCPServer::start(){
 				// Dealing with message
 				char *cur = messageBuf.data();
 				for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
-					tcpServer->handler->handleMessage((Message *)cur, tcpServer);
+					tcpServer->handler->handleMessage((Message *)cur, tcpServer, MessageHandler::DeliverType::DEAR_MESSAGE_TCPserver, clientStream);
 					int msgLen = ((Message *)cur)->length;
 					cur += msgLen;
 					remain -= msgLen;
@@ -77,4 +77,14 @@ void TCPServer::start(){
 			});
 		}
 	});
+}
+
+void TCPServer::sendMessage(Message *message, uv_stream_t *stream, uv_write_cb callback, void *callbackData){
+	uv_write_t *req = new uv_write_t;
+	req->data = callbackData;
+	uv_buf_t buf = {
+		.base = (char *)message,
+		.len = message->length
+	};
+	uv_write(req, stream, &buf, 1, callback);
 }

@@ -70,7 +70,7 @@ void IPCServer::start(){
 				// Dealing with message
 				char *cur = messageBuf.data();
 				for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
-					ipcServer->handler->handleMessage((Message *)cur, ipcServer);
+					ipcServer->handler->handleMessage((Message *)cur, ipcServer, MessageHandler::DeliverType::DEAR_MESSAGE_IPCserver);
 					int msgLen = ((Message *)cur)->length;
 					cur += msgLen;
 					remain -= msgLen;
@@ -89,5 +89,5 @@ void IPCServer::sendMessage(Message *message, uv_write_cb callback , void *callb
 		.base = (char *)message,
 		.len = message->length
 	};
-	uv_write(req, (uv_stream_t *)&clientPipe, &buf, 1, callback);
+	uv_write(req, (uv_stream_t *)clientPipe, &buf, 1, callback);
 }

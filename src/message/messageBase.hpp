@@ -4,10 +4,15 @@
 #include <cstdint>
 
 enum MessageType{
-	IPC_Connect_request,
-	IPC_Connect_notice,
-	KeyDown_request,
-	KeyUp_request
+	DEAR_IPC_Connect_request,
+	DEAR_IPC_Connect_notice,
+	DEAR_KeyDown_request,
+	DEAR_KeyUp_request,
+	DEAR_PointerMotion_request,
+	DEAR_PointerUp_request,
+	DEAR_PointerDown_request,
+	DEAR_PointerAxis_request,
+	DEAR_Close_notice
 };
 
 class Message{

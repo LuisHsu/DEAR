@@ -24,7 +24,6 @@ extern "C"{
 class Input{
 public:
 	Input(uv_loop_t *loop, IPCClient *client);
-
 private:
 	uv_loop_t *loop;
 	uv_poll_t uvPoll;

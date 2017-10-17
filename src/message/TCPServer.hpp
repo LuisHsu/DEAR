@@ -20,6 +20,7 @@ public:
 	TCPServer(uv_loop_t *loop, const char *name, const char *service, MessageHandler *handler);
 	~TCPServer();
 	void start();
+	void sendMessage(Message *message, uv_stream_t *stream, uv_write_cb callback = nullptr, void *callbackData = nullptr);
 private:
 	uv_loop_t *uvLoop;
 	uv_tcp_t serverSocket;

@@ -14,13 +14,13 @@ extern "C"{
 class IPCServer{
 public:
 	IPCServer(uv_loop_t *loop, const char *path, MessageHandler *handler);
-	~IPCServer();
 	void start();
+	void stop();
 	void sendMessage(Message *message, uv_write_cb callback = nullptr, void *callbackData = nullptr);
 private:
 	uv_loop_t *uvLoop;
 	uv_pipe_t serverPipe;
-	uv_pipe_t *clientPipe = nullptr;
+	uv_pipe_t clientPipe;
 	MessageHandler *handler;
 	bool connecting;
 	std::vector<char> messageBuf;

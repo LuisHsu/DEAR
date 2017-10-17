@@ -10,12 +10,7 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 		case DEAR_KeyDown_request:
 			std::cout << "KeyDown: " << ((KeyboardRequest *) message)->key << std::endl;
 			if(((KeyboardRequest *) message)->key == DEAR_KEY_Q){
-				Message *msg = new Message;
-				msg->type = DEAR_Close_notice;
-				msg->length = sizeof(*msg);
-				sendMessage(msg, deliver, type, data, [](uv_write_t* req, int status){
-					delete (Message *)req->data;
-				}, msg);
+				((IPCServer *)deliver)->stop();
 			}
 		break;
 		case DEAR_PointerMotion_request:

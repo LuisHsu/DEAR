@@ -4,14 +4,14 @@ Input::Input(uv_loop_t *loop, IPCClient *client):
 	loop(loop), client(client)
 {
 	// Create new udev context
-	struct udev *udev_ = udev_new();
+	udevCtx = udev_new();
 	// libinput interface
 	struct libinput_interface interface_ = {
 		.open_restricted = open_restricted,
 		.close_restricted = close_restricted
 	};
 	// Create libinput context
-	inputCtx = libinput_udev_create_context(&interface_, nullptr, udev_);
+	inputCtx = libinput_udev_create_context(&interface_, nullptr, udevCtx);
 	// Get fd
 	int inputfd = libinput_get_fd(inputCtx);
 	// Uv poll
@@ -24,6 +24,9 @@ Input::Input(uv_loop_t *loop, IPCClient *client):
 		struct libinput_event *event = nullptr;
 		while((event = libinput_get_event(input->inputCtx)) != nullptr){
 			switch(libinput_event_get_type(event)){
+				case LIBINPUT_EVENT_DEVICE_ADDED:
+					input->deviceAdd(event);
+				break;
 				case LIBINPUT_EVENT_KEYBOARD_KEY:
 					input->keyboardKey(event);
 				break;
@@ -47,10 +50,24 @@ Input::Input(uv_loop_t *loop, IPCClient *client):
 	});
 	// Get systemd seats
 	char **seats;
-	sd_get_seats(&seats);
+	int seatCount = sd_get_seats(&seats);
 	// Assign seat
 	libinput_udev_assign_seat(inputCtx, seats[0]);
+	// Clean
+	for(int i = 0; i < seatCount; ++i){
+		free(seats[i]);
+	}
 	free(seats);
+}
+
+Input::~Input(){
+	// Unref devices
+	for(struct libinput_device *device : devices){
+		libinput_device_unref(device);
+	}
+	// Undef context
+	libinput_unref(inputCtx);
+	udev_unref(udevCtx);
 }
 
 int Input::open_restricted(const char *path, int flags, void *user_data){
@@ -65,6 +82,9 @@ void Input::close_restricted(int fd, void *user_data){
 	close(fd);
 }
 
+void Input::deviceAdd(struct libinput_event *event){
+	devices.push_back(libinput_event_get_device(event));
+}
 void Input::keyboardKey(struct libinput_event *event){
 	struct libinput_event_keyboard *kbevent = libinput_event_get_keyboard_event(event);
 	if(kbevent){
@@ -77,6 +97,7 @@ void Input::keyboardKey(struct libinput_event *event){
 		request->count = libinput_event_keyboard_get_seat_key_count(kbevent);
 		client->sendMessage(request, [](uv_write_t* req, int status){
 			delete (KeyboardRequest *)req->data;
+			delete req;
 		}, request);
 	}
 }
@@ -92,6 +113,7 @@ void Input::pointerMotion(struct libinput_event *event){
 		request->dy = libinput_event_pointer_get_dy(ptrevent);
 		client->sendMessage(request, [](uv_write_t* req, int status){
 			delete (PointerMotionRequest *)req->data;
+			delete req;
 		}, request);
 	}
 }
@@ -116,6 +138,7 @@ void Input::pointerMotionAbsolute(struct libinput_event *event){
 			request->dy = curY - lastY;
 			client->sendMessage(request, [](uv_write_t* req, int status){
 				delete (PointerMotionRequest *)req->data;
+				delete req;
 			}, request);
 			lastX = curX;
 			lastY = curY;
@@ -134,6 +157,7 @@ void Input::pointerButton(struct libinput_event *event){
 		request->count = libinput_event_pointer_get_seat_button_count(ptrevent);		
 		client->sendMessage(request, [](uv_write_t* req, int status){
 			delete (PointerButtonRequest *)req->data;
+			delete req;
 		}, request);
 	}
 }
@@ -153,6 +177,8 @@ void Input::pointerAxis(struct libinput_event *event){
 			case LIBINPUT_POINTER_AXIS_SOURCE_CONTINUOUS:
 				request->source = PointerAxisRequest::AxisSource::DEAR_POINTER_AXIS_SRC_Continuous;
 			break;
+			default:
+			break;
 		}
 		if(libinput_event_pointer_has_axis(ptrevent, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL)){
 			request->axis = PointerAxisRequest::Axis::DEAR_POINTER_AXIS_Horizontal;
@@ -164,6 +190,7 @@ void Input::pointerAxis(struct libinput_event *event){
 		}
 		client->sendMessage(request, [](uv_write_t* req, int status){
 			delete (PointerAxisRequest *)req->data;
+			delete req;
 		}, request);
 	}
 }

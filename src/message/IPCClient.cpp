@@ -9,9 +9,6 @@ IPCClient::IPCClient(uv_loop_t *loop, MessageHandler *handler):
 	clientPipe.data = this;
 	uvConnect.data = this;
 }
-IPCClient::~IPCClient(){
-	uv_read_stop((uv_stream_t*)&clientPipe);
-}
 void IPCClient::start(const char *path){
 	// Listen
 	uv_pipe_connect(&uvConnect, &clientPipe, path, [](uv_connect_t* connect, int status){
@@ -24,7 +21,7 @@ void IPCClient::start(const char *path){
 		uv_read_start((uv_stream_t*)&(ipcClient->clientPipe),
 		// Alloc callback
 		[](uv_handle_t* , size_t suggested_size, uv_buf_t* buf){
-			buf->base = (char *)malloc(suggested_size);
+			buf->base = new char[suggested_size];
 			buf->len = suggested_size;
 		},
 		// Read callback
@@ -40,8 +37,8 @@ void IPCClient::start(const char *path){
 			messageBuf.resize(messageBuf.size() + len);
 			// Copy data
 			memcpy(messageBuf.data() + messageBuf.size() - len, buf->base, len);
-			// Free buffer
-			delete [] buf->base;
+			// Free buf
+			delete [] (char *)buf->base;
 			// Dealing with message
 			char *cur = messageBuf.data();
 			for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
@@ -68,5 +65,8 @@ void IPCClient::sendMessage(Message *message, uv_write_cb callback , void *callb
 }
 
 void IPCClient::stop(){
+	uv_walk(uvLoop, [](uv_handle_t* handle, void* arg){
+		uv_close(handle, nullptr);
+	}, nullptr);
 	uv_stop(uvLoop);
 }

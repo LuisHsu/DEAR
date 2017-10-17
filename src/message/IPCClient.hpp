@@ -13,7 +13,6 @@ extern "C"{
 class IPCClient{
 public:
 	IPCClient(uv_loop_t *loop, MessageHandler *handler);
-	~IPCClient();
 	void start(const char *path);
 	void stop();
 	void sendMessage(Message *message, uv_write_cb callback = nullptr, void *callbackData = nullptr);

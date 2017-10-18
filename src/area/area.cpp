@@ -2,8 +2,15 @@
 
 #include <iostream>
 
+Area::Area(){
+	
+}
+
 void Area::handleMessage(Message *message, void *deliver, DeliverType type, void *data){
 	switch(message->type){
+		case DEAR_IPC_Connect_request:
+			ipcConnect(message);
+		break;
 		case DEAR_KeyUp_request:
 			std::cout << "KeyUp: " << ((KeyboardRequest *) message)->key << std::endl;
 		break;
@@ -47,7 +54,9 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 		break;
 	}
 }
+void Area::ipcConnect(Message *message){
 
+}
 void Area::sendMessage(Message *message, void *deliver, DeliverType type, void *data, uv_write_cb callback, void *callbackData){
 	switch(type){
 		case MessageHandler::DeliverType::DEAR_MESSAGE_IPCserver:

@@ -8,10 +8,11 @@
 
 class Area : public MessageHandler{
 public:
-	
+	Area();
 private:
 	void handleMessage(Message *message, void *deliver, DeliverType type = DEAR_MESSAGE_Client, void *data = nullptr);
 	void sendMessage(Message *message, void *deliver, DeliverType type, void *data, uv_write_cb callback = nullptr, void *callbackData = nullptr);
+	void ipcConnect(Message *message);
 };
 
 #endif

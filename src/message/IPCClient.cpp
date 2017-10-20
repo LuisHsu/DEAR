@@ -42,7 +42,7 @@ void IPCClient::start(const char *path){
 			// Dealing with message
 			char *cur = messageBuf.data();
 			for(uint32_t remain = messageBuf.size(); remain >= sizeof(Message) && remain >= ((Message *)cur)->length;){
-				ipcClient->handler->handleMessage((Message *)cur, ipcClient);
+				ipcClient->handler->handleMessage((Message *)cur, ipcClient, MessageHandler::DEAR_MESSAGE_IPCClient);
 				int msgLen = ((Message *)cur)->length;
 				cur += msgLen;
 				remain -= msgLen;
@@ -52,6 +52,8 @@ void IPCClient::start(const char *path){
 				messageBuf.erase(messageBuf.begin(), messageBuf.begin() + (cur - messageBuf.data()));
 			}
 		});
+		// Call messageReady
+		ipcClient->handler->messageReady(ipcClient, MessageHandler::DeliverType::DEAR_MESSAGE_IPCClient);
 	});
 }
 void IPCClient::sendMessage(Message *message, uv_write_cb callback , void *callbackData){

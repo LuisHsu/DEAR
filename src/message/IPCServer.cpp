@@ -20,7 +20,7 @@ void IPCServer::start(){
 	uv_listen((uv_stream_t*)&serverPipe, 1, [](uv_stream_t* server, int status){
 		// Check status
 		if(status < 0){
-			throw "[IPCServer] Can't listen server.";
+			throw "[IPCServer] Client connect failed.";
 		}
 		// Get data
 		IPCServer *ipcServer = (IPCServer *)server->data;
@@ -75,6 +75,8 @@ void IPCServer::start(){
 			});
 		}
 	});
+	// Call messageReady
+	handler->messageReady(this, MessageHandler::DeliverType::DEAR_MESSAGE_IPCserver);
 }
 void IPCServer::sendMessage(Message *message, uv_write_cb callback , void *callbackData){
 	uv_write_t *req = new uv_write_t;

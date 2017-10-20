@@ -1,7 +1,11 @@
 add_executable(dear-area
 	areaMain.cpp
 	area.cpp
+	display.cpp
+	displayXcb.cpp
 )
 target_link_libraries(dear-area
 	dearMsg
+	${XCB_LIBRARIES}
+	${VULKAN_LIBRARIES}
 )

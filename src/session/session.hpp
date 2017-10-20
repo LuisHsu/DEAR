@@ -6,9 +6,12 @@
 
 class Session : public MessageHandler{
 public:
-
+	Session();
 private:
-	void handleMessage(Message *message, void *deliver, DeliverType type = DEAR_MESSAGE_Client, void *data = nullptr);
+	DeliverType deliverType;
+	IPCClient *ipcClient = nullptr;
+	void handleMessage(Message *message, void *deliver, DeliverType type, void *data = nullptr);
+	void messageReady(void *deliver, DeliverType type);
 };
 
 #endif

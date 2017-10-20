@@ -77,6 +77,8 @@ void TCPServer::start(){
 			});
 		}
 	});
+	// Call messageReady
+	handler->messageReady(this, MessageHandler::DeliverType::DEAR_MESSAGE_TCPserver);
 }
 
 void TCPServer::sendMessage(Message *message, uv_stream_t *stream, uv_write_cb callback, void *callbackData){

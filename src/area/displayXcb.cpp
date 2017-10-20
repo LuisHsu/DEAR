@@ -1,6 +1,8 @@
 #include "displayXcb.hpp"
 
-DisplayXcb::DisplayXcb(){
+DisplayXcb::DisplayXcb(IPCServer *server):
+	server(server)
+{
 /*== XCB ==*/
 	xcb_screen_t *screenXcb = nullptr;
 /*** Connection ***/
@@ -34,6 +36,7 @@ DisplayXcb::DisplayXcb(){
 
 	// Create Window
 	windowXcb = xcb_generate_id(connectionXcb);
+	uint32_t eventVal = XCB_EVENT_MASK_EXPOSURE;
 	xcb_create_window(connectionXcb,
 		XCB_COPY_FROM_PARENT,
 		windowXcb,
@@ -43,7 +46,7 @@ DisplayXcb::DisplayXcb(){
 		0,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		screenXcb->root_visual,
-		0, nullptr
+		XCB_CW_EVENT_MASK, &eventVal
 	);
 	// Set window property
 	const char *windowTitle = "DEAR Desktop";
@@ -56,10 +59,27 @@ DisplayXcb::DisplayXcb(){
 		strlen(windowTitle),
 		windowTitle
 	);
+	closeReply = xcb_intern_atom_reply(connectionXcb, xcb_intern_atom(connectionXcb, 0, 16, "WM_DELETE_WINDOW"),0);
+	xcb_change_property (connectionXcb,
+		XCB_PROP_MODE_REPLACE,
+		windowXcb,
+		xcb_intern_atom_reply(connectionXcb, xcb_intern_atom(connectionXcb, 1, 12, "WM_PROTOCOLS"),0)->atom,
+		XCB_ATOM_ATOM,
+		32,
+		1,
+		&(closeReply->atom)
+	);
 	// Map window
 	xcb_map_window(connectionXcb, windowXcb);
 	xcb_flush(connectionXcb);
-
+/*** Events ***/
+	// Combined with libuv
+	uv_poll_init(server->getLoop(), &xcbPollUv, xcb_get_file_descriptor(connectionXcb));
+	xcbPollUv.data = this;
+	uv_poll_start(&xcbPollUv, UV_READABLE, [](uv_poll_t* handle, int status, int events){
+		DisplayXcb *display = (DisplayXcb *)handle->data;
+		display->handleXcbEvent(xcb_poll_for_event(display->connectionXcb));
+	});
 /*== Vulkan ==*/
 /*** Instance ***/
 	// App info
@@ -244,4 +264,18 @@ DisplayXcb::DisplayXcb(){
 	// Get queue
 	vkGetDeviceQueue(deviceVk, graphicFamily, 0, &graphicQueueVk);
 	vkGetDeviceQueue(deviceVk, presentFamily, 0, &presentQueueVk);
+}
+
+void DisplayXcb::handleXcbEvent(xcb_generic_event_t *event){
+	if(event){
+		switch(event->response_type & ~0x80){
+			case XCB_CLIENT_MESSAGE:
+				if(((xcb_client_message_event_t*)event)->data.data32[0] == closeReply->atom){
+					server->stop();
+				}
+			break;
+			default:
+			break;
+		}
+	}
 }

@@ -2,10 +2,6 @@
 
 #include <iostream>
 
-Area::Area(){
-	
-}
-
 void Area::handleMessage(Message *message, void *deliver, DeliverType type, void *data){
 	switch(message->type){
 		case DEAR_IPC_Connect_request:
@@ -16,12 +12,9 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 		break;
 		case DEAR_KeyDown_request:
 			std::cout << "KeyDown: " << ((KeyboardRequest *) message)->key << std::endl;
-			if(((KeyboardRequest *) message)->key == DEAR_KEY_Q){
-				((IPCServer *)deliver)->stop();
-			}
 		break;
 		case DEAR_PointerMotion_request:
-			std::cout << "Motion: (" << ((PointerMotionRequest *) message)->dx << ", " << ((PointerMotionRequest *) message)->dy << ")" << std::endl;
+			pointerMotion(message, deliver, type, data);
 		break;
 		case DEAR_PointerUp_request:
 			std::cout << "PointerUp: " << ((PointerButtonRequest *) message)->button << std::endl;
@@ -55,9 +48,12 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 	}
 }
 void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *data){
+	IPCServer *server = (IPCServer *)deliver;
 	// Get display
-	display = getDisplay();
+	display = getDisplay(server);
 	display->init();
+	// Set new user
+	server->userData = new User;
 	// Send connect notice
 	Message *msg = new Message;
 	msg->type = DEAR_IPC_Connect_notice;
@@ -89,10 +85,14 @@ void Area::messageReady(void *deliver, DeliverType type){
 	}
 }
 
-Display *Area::getDisplay(){
+void Area::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
+	PointerMotionRequest *request = (PointerMotionRequest *)message;                      
+}
+
+Display *Area::getDisplay(IPCServer *server){
 	Display *ret = nullptr;
 	try{
-		ret = new DisplayXcb();
+		ret = new DisplayXcb(server);
 	}catch(std::exception e){
 		std::cerr << "XCB display init error: " << e.what() << ". Try direct display." << std::endl;
 		ret = nullptr;

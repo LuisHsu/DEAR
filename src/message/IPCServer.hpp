@@ -14,8 +14,12 @@ extern "C"{
 class IPCServer{
 public:
 	IPCServer(uv_loop_t *loop, const char *path, MessageHandler *handler);
+
+	void *userData = nullptr;
+
 	void start();
 	void stop();
+	uv_loop_t *getLoop();
 	void sendMessage(Message *message, uv_write_cb callback = nullptr, void *callbackData = nullptr);
 private:
 	uv_loop_t *uvLoop;

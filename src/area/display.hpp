@@ -9,9 +9,6 @@ public:
 	DisplayType type;
 	void init();
 	void paint(bool needRecord = false);
-	float r;
-	float g;
-	float b;
 protected:
 	VkInstance instanceVk;
 	VkPhysicalDevice phyDeviceVk;

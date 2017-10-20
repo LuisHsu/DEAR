@@ -102,3 +102,7 @@ void IPCServer::stop(){
 	}, nullptr);
 	uv_stop(uvLoop);
 }
+
+uv_loop_t* IPCServer::getLoop(){
+	return uvLoop;
+}

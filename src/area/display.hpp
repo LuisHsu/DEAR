@@ -1,6 +1,7 @@
 #ifndef DEAR_DISPLAY
 #define DEAR_DISPLAY
 
+#include <vector>
 #include <vulkan/vulkan.hpp>
 
 class Display{
@@ -8,7 +9,7 @@ public:
 	enum DisplayType {DEAR_DISPLAY_XCB, DEAR_DISPLAY_DIRECT};
 	DisplayType type;
 	void init();
-	void paint(bool needRecord = false);
+	void paint(bool secondaryChanged = false);
 protected:
 	VkInstance instanceVk;
 	VkPhysicalDevice phyDeviceVk;
@@ -28,9 +29,10 @@ protected:
 	std::vector<VkImageView> swapChainImageViewsVk;
 	std::vector<VkFramebuffer> swapChainFramebuffersVk;
 	std::vector<VkCommandBuffer> commandBuffersVk;
+	std::vector<VkCommandBuffer> secondaryCommandBuffersVk;
 	int32_t graphicFamily = -1;
 	int32_t presentFamily = -1;
-	void record(uint32_t index);
+	void primaryRecord(uint32_t index);
 };
 
 #endif

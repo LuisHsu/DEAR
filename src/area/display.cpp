@@ -223,11 +223,12 @@ void Display::init(){
 
 	paint(true);
 }
-void Display::paint(bool needRecord){
+void Display::paint(bool secondaryChanged){
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(deviceVk, swapChainVk, std::numeric_limits<uint32_t>::max(), imageAvailableSemaphoreVk, VK_NULL_HANDLE, &imageIndex);
-	if(needRecord){
-		record(imageIndex);
+	// Record
+	if(secondaryChanged){
+		primaryRecord(imageIndex);
 	}
 	// Submit command buffer
 	VkSubmitInfo submitInfo = {};
@@ -282,7 +283,7 @@ void Display::paint(bool needRecord){
 		break;
 	}	
 }
-void Display::record(uint32_t index){
+void Display::primaryRecord(uint32_t index){
 /*** Command buffer record ***/
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -297,10 +298,13 @@ void Display::record(uint32_t index){
 	renderPassInfo.framebuffer = swapChainFramebuffersVk[index];
 	renderPassInfo.renderArea.offset = {0, 0};
 	renderPassInfo.renderArea.extent = displayExtentVk;
-	VkClearValue clearColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	vkCmdBeginRenderPass(commandBuffersVk[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	if(secondaryCommandBuffersVk.size() > 0){
+		vkCmdExecuteCommands(commandBuffersVk[index], secondaryCommandBuffersVk.size(), secondaryCommandBuffersVk.data());
+	}
 	vkCmdEndRenderPass(commandBuffersVk[index]);
 	switch(vkEndCommandBuffer(commandBuffersVk[index])){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:

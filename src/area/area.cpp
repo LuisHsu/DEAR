@@ -2,6 +2,39 @@
 
 #include <iostream>
 
+Area::Area(){
+/*** Area module ***/
+	const std::string modDir("mod/area");
+	// Get module directory
+	DIR *areaModDir = opendir(modDir.c_str());
+	if(!areaModDir){
+		perror("[Area module] Open module directory error:");
+	}
+	// Load modules
+	struct dirent *entry = nullptr;
+	while((entry = readdir(areaModDir)) != nullptr){
+		if(entry->d_type == DT_REG){
+			// Get dl handle
+			void *modHandle = dlopen((modDir + "/" + entry->d_name).c_str(), RTLD_LAZY);
+			if(!modHandle){
+				std::cerr << "[Area module] Error open module " << entry->d_name << " : " << dlerror() << std::endl;
+			}
+			// Get create function
+			area_module_create_t createFunc = (area_module_create_t) dlsym(modHandle, "createModule");
+			if(!createFunc){
+				std::cerr << "[Area module] Error open create function : " << dlerror() << std::endl;
+			}
+			// Create module instance
+			areaModules[entry->d_name] = createFunc(this);
+		}
+	}
+}
+Area::~Area(){
+	// Delete area modules
+	for(std::pair<std::string, AreaModule*> modulePair : areaModules){
+		modulePair.second->removeModule();
+	}
+}
 void Area::handleMessage(Message *message, void *deliver, DeliverType type, void *data){
 	switch(message->type){
 		case DEAR_IPC_Connect_request:
@@ -14,7 +47,7 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 			std::cout << "KeyDown: " << ((KeyboardRequest *) message)->key << std::endl;
 		break;
 		case DEAR_PointerMotion_request:
-			pointerMotion(message, deliver, type, data);
+			//pointerMotion(message, deliver, type, data);
 		break;
 		case DEAR_PointerUp_request:
 			std::cout << "PointerUp: " << ((PointerButtonRequest *) message)->button << std::endl;
@@ -53,7 +86,9 @@ void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *d
 	display = getDisplay(server);
 	display->init();
 	// Set new user
-	server->userData = new User;
+	User *newUser = new User;
+	server->userData = newUser;
+	users.push_back(newUser);
 	// Send connect notice
 	Message *msg = new Message;
 	msg->type = DEAR_IPC_Connect_notice;
@@ -84,11 +119,9 @@ void Area::messageReady(void *deliver, DeliverType type){
 		break;
 	}
 }
-
-void Area::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
+/*void Area::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
 	PointerMotionRequest *request = (PointerMotionRequest *)message;                      
-}
-
+}*/
 Display *Area::getDisplay(IPCServer *server){
 	Display *ret = nullptr;
 	try{

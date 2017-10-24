@@ -12,9 +12,12 @@ int main(void){
 	// Termios
 	struct termios term = {};
 	tcgetattr(STDIN_FILENO, &term);
-	term.c_lflag &= ~(ICANON | ECHO | ECHOE);
-	term.c_oflag &= ~OPOST;
-	tcsetattr(STDIN_FILENO, TCSANOW, &term);
+	{
+		struct termios rawterm = term;
+		cfmakeraw(&rawterm);
+		rawterm.c_oflag |= OPOST;
+		tcsetattr(STDIN_FILENO, TCSANOW, &rawterm);
+	}
 	// libuv loop
 	uv_loop_t *loop = (uv_loop_t *)malloc(sizeof(uv_loop_t));
 	uv_loop_init(loop);
@@ -30,10 +33,8 @@ int main(void){
 	// Clean loop
 	uv_loop_close(loop);
 	free(loop);
-	// Flush and reset termio
-	term.c_lflag |= ICANON | ECHO | ECHOE;
-	term.c_oflag |= OPOST;
+	// Reset term & clean stdin
 	tcflush(STDIN_FILENO, TCIFLUSH);
-	tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
+	tcsetattr(STDIN_FILENO, TCSANOW, &term);
 	return 0;
 }

@@ -6,6 +6,7 @@ add_executable(dear-area
 )
 target_link_libraries(dear-area
 	dearMsg
+	dl
 	${XCB_LIBRARIES}
 	${VULKAN_LIBRARIES}
 )

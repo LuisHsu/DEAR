@@ -1,7 +1,9 @@
 #include "skybox.hpp"
 
+#include <iostream>
+
 SkyBoxModule::SkyBoxModule(Area *area):area(area){
-	
+	std::cout << "SkyBox" << std::endl;
 }
 
 void SkyBoxModule::removeModule(){

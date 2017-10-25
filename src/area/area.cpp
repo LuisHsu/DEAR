@@ -82,11 +82,8 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 }
 void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *data){
 	IPCServer *server = (IPCServer *)deliver;
-	// Get display
-	display = getDisplay(server);
-	display->init();
 	// Set new user
-	User *newUser = new User;
+	User *newUser = new User(server);
 	server->userData = newUser;
 	users.push_back(newUser);
 	// Send connect notice
@@ -122,16 +119,3 @@ void Area::messageReady(void *deliver, DeliverType type){
 /*void Area::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
 	PointerMotionRequest *request = (PointerMotionRequest *)message;                      
 }*/
-Display *Area::getDisplay(IPCServer *server){
-	Display *ret = nullptr;
-	try{
-		ret = new DisplayXcb(server);
-	}catch(std::exception e){
-		std::cerr << "XCB display init error: " << e.what() << ". Try direct display." << std::endl;
-		ret = nullptr;
-	}catch(const char *e){
-		std::cerr << "XCB display init error: " << e << ". Try direct display." << std::endl;
-		ret = nullptr;
-	}
-	return ret;
-}

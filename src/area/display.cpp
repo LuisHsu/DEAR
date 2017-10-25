@@ -1,6 +1,6 @@
 #include "display.hpp"
 
-void Display::init(){
+void Display::localInit(){
 /*** Swap chain ***/
 	// Get surface format
 	uint32_t surfaceFormatCount = 0;
@@ -220,7 +220,7 @@ void Display::init(){
 		default:
 		break;
 	}
-
+/*** paint ***/
 	paint(true);
 }
 void Display::paint(bool secondaryChanged){

@@ -3,6 +3,7 @@ add_executable(dear-area
 	area.cpp
 	display.cpp
 	displayXcb.cpp
+	user.cpp
 )
 target_link_libraries(dear-area
 	dearMsg

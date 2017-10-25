@@ -8,7 +8,7 @@ class Display{
 public:
 	enum DisplayType {DEAR_DISPLAY_XCB, DEAR_DISPLAY_DIRECT};
 	DisplayType type;
-	void init();
+	void localInit();
 	void paint(bool secondaryChanged = false);
 protected:
 	VkInstance instanceVk;

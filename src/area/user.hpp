@@ -4,9 +4,14 @@
 #include <list>
 #include <glm/vec3.hpp>
 
+#include <message/IPCServer.hpp>
+#include "displayXcb.hpp"
+
 class User{
 public:
+	User(IPCServer *server);
+	Display *display = nullptr;
 	glm::vec3 cameraRotation;
-	glm::vec3 cameraTranslation;	
+	glm::vec3 cameraTranslation;
 };
 #endif

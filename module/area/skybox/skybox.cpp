@@ -257,7 +257,7 @@ VkShaderModule SkyBoxModule::createShaderModule(const char *fileName, VkDevice d
 	}
 	return ret;
 }
-SkyBoxModule::
+
 void SkyBoxModule::recordCommand(VkCommandBuffer cmdBuffer, Display *display){
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -283,7 +283,7 @@ void SkyBoxModule::recordCommand(VkCommandBuffer cmdBuffer, Display *display){
 	display->paint();
 }
 
-void SkyBoxModule::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
+void SkyBoxModule::pointerMotion(Message *message, void *deliver, MessageHandler::DeliverType type, void *data){
 	std::cout << "Motion" << std::endl;
 }
 

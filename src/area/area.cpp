@@ -36,9 +36,15 @@ Area::~Area(){
 	}
 }
 void Area::handleMessage(Message *message, void *deliver, DeliverType type, void *data){
+	User *user = nullptr;
+	if(type == DEAR_MESSAGE_IPCserver){
+		user = (User *)((IPCServer *)deliver)->userData;
+	}else{
+		// TODO: TCP user
+	}
 	switch(message->type){
-		case DEAR_IPC_Connect_request:
-			ipcConnect(message, deliver, type, data);
+		case DEAR_Connect_request:
+			connectRequest(message, deliver, type, data);
 		break;
 		case DEAR_KeyUp_request:
 			std::cout << "KeyUp: " << ((KeyboardRequest *) message)->key << std::endl;
@@ -47,7 +53,7 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 			std::cout << "KeyDown: " << ((KeyboardRequest *) message)->key << std::endl;
 		break;
 		case DEAR_PointerMotion_request:
-			//pointerMotion(message, deliver, type, data);
+			user->currentHandler()->pointerMotion(message, deliver, type, data);
 		break;
 		case DEAR_PointerUp_request:
 			std::cout << "PointerUp: " << ((PointerButtonRequest *) message)->button << std::endl;
@@ -80,11 +86,17 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 		break;
 	}
 }
-void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *data){
-	IPCServer *server = (IPCServer *)deliver;
-	// Set new user
-	User *newUser = new User(server);
-	server->userData = newUser;
+void Area::connectRequest(Message *message, void *deliver, DeliverType type, void *data){
+	User *newUser = nullptr;
+	if(type == DEAR_MESSAGE_IPCserver){
+		IPCServer *server = (IPCServer *)deliver;
+		// Set new user
+		newUser = new User(server);
+		server->userData = newUser;
+		users.push_back(newUser);
+	}else{
+		// TODO: TCP user
+	}
 	users.push_back(newUser);
 	// Init area modules
 	for(std::pair<std::string, AreaModule*> areaModulePair : areaModules){
@@ -92,7 +104,7 @@ void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *d
 	}
 	// Send connect notice
 	Message *msg = new Message;
-	msg->type = DEAR_IPC_Connect_notice;
+	msg->type = DEAR_Connect_notice;
 	msg->length = sizeof(*msg);
 	sendMessage(msg, deliver, type, data);
 }

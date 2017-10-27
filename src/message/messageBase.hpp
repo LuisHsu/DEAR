@@ -4,8 +4,8 @@
 #include <cstdint>
 
 enum MessageType{
-	DEAR_IPC_Connect_request,
-	DEAR_IPC_Connect_notice,
+	DEAR_Connect_request,
+	DEAR_Connect_notice,
 	DEAR_KeyDown_request,
 	DEAR_KeyUp_request,
 	DEAR_PointerMotion_request,

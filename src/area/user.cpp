@@ -19,8 +19,11 @@ User::User(IPCServer *server):
 	}
 }
 void User::addHandler(ControlHandler *handler){
-	controlHandlers.push_back();
+	controlHandlers.push_back(handler);
 }
 void User::popHandler(){
 	controlHandlers.pop_back();
+}
+ControlHandler* User::currentHandler(){
+	return controlHandlers.back();
 }

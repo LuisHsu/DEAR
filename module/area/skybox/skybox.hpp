@@ -25,6 +25,7 @@ public:
 	void userInit(void *userPtr);
 	void removeModule();
 	void recordCommand(VkCommandBuffer cmdBuffer, Display *display);
+	void pointerMotion(Message *message, void *deliver, MessageHandler::DeliverType type, void *data);
 private: 
 	Area *area;
 	std::map<User*, VkCommandBuffer *> commandBuffers;

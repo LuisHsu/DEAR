@@ -13,6 +13,7 @@ public:
 	User(IPCServer *server);
 	void addHandler(ControlHandler *handler);
 	void popHandler();
+	ControlHandler *currentHandler();
 	Display *display = nullptr;
 	glm::vec3 cameraRotation;
 	glm::vec3 cameraTranslation;

@@ -4,7 +4,9 @@
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <fstream>
+#include <cstring>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <module/areaModule.hpp>
 #include <area/area.hpp>
@@ -23,7 +25,6 @@ public:
 	void userInit(void *userPtr);
 	void removeModule();
 	void recordCommand(VkCommandBuffer cmdBuffer, Display *display);
-	VkShaderModule createShaderModule(const char *fileName, VkDevice device);
 private: 
 	Area *area;
 	std::map<User*, VkCommandBuffer *> commandBuffers;
@@ -32,7 +33,12 @@ private:
 	VkPipeline graphicsPipelineVk;
 	VkBuffer uniformBufferVk;
 	VkDeviceMemory uniformBufferMemoryVk;
-	
+	VkDescriptorPool descriptorPoolVk;
+	VkDescriptorSet descriptorSetVk;
+	VkPipelineLayout pipelineLayoutVk;
+	UniformBufferObject uniformBufferObject;
+	VkShaderModule createShaderModule(const char *fileName, VkDevice device);
+	uint32_t findMemoryType(VkPhysicalDevice phyDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 };
 
 #endif

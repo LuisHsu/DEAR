@@ -34,7 +34,6 @@ private:
 	void sendMessage(Message *message, void *deliver, DeliverType type, void *data, uv_write_cb callback = nullptr, void *callbackData = nullptr);
 	void ipcConnect(Message *message, void *deliver, DeliverType type, void *data);
 	void messageReady(void *server, DeliverType type);
-	//void pointerMotion(Message *message, void *deliver, DeliverType type, void *data);
 };
 
 #endif

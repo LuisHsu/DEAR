@@ -14,6 +14,7 @@ public:
 	VkDevice deviceVk;
 	VkRenderPass renderPassVk;
 	VkCommandBufferInheritanceInfo inheritanceInfoVk;
+	VkPhysicalDevice phyDeviceVk;
 	std::vector<bool> updatePrimary;
 	
 	void localInit();
@@ -22,7 +23,6 @@ public:
 	void paint();
 protected:
 	VkInstance instanceVk;
-	VkPhysicalDevice phyDeviceVk;
 	VkSurfaceKHR surfaceVk;
 	VkQueue graphicQueueVk;
 	VkQueue presentQueueVk;

@@ -1,6 +1,8 @@
 #include "user.hpp"
 
-User::User(IPCServer *server){
+User::User(IPCServer *server):
+	cameraRotation(glm::vec3(0.0f, 0.0f, 0.0f)), cameraTranslation(glm::vec3(0.0f, 0.0f, 0.0f))
+{
 	// Get display
 	try{
 		display = new DisplayXcb(server);
@@ -15,4 +17,10 @@ User::User(IPCServer *server){
 	if(display){
 		display->localInit();
 	}
+}
+void User::addHandler(ControlHandler *handler){
+	controlHandlers.push_back();
+}
+void User::popHandler(){
+	controlHandlers.pop_back();
 }

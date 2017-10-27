@@ -1,0 +1,11 @@
+#ifndef DEAR_CONTROLHANDLER_DEF
+#define DEAR_CONTROLHANDLER_DEF
+
+#include <message/message.hpp>
+
+class ControlHandler{
+public:
+	virtual void pointerMotion(Message *message, void *deliver, DeliverType type, void *data){};
+};
+
+#endif

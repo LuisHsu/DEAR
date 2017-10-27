@@ -2,8 +2,9 @@
 #define DEAR_AREA_MODULE_DEF
 
 #include <string>
+#include <area/controlHandler.hpp>
 
-class AreaModule{
+class AreaModule : public ControlHandler{
 public: 
 	virtual ~AreaModule(){};
 	virtual void userInit(void *user){};

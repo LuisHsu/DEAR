@@ -120,6 +120,3 @@ void Area::messageReady(void *deliver, DeliverType type){
 		break;
 	}
 }
-/*void Area::pointerMotion(Message *message, void *deliver, DeliverType type, void *data){
-	PointerMotionRequest *request = (PointerMotionRequest *)message;                      
-}*/

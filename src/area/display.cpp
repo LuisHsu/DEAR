@@ -344,7 +344,7 @@ VkCommandBuffer *Display::getSecCmdBuffer(){
 	return &(secondaryCommandBuffersVk.back());
 }
 void Display::update(){
-	for(int i = 0 ; i < updatePrimary.size(); ++i){
+	for(uint32_t i = 0 ; i < updatePrimary.size(); ++i){
 		updatePrimary[i] = true;
 	}
 }

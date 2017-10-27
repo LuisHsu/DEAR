@@ -1,9 +1,7 @@
 #ifndef DEAR_USER_MODULE_DEF
 #define DEAR_USER_MODULE_DEF
 
-#include <interfaces.hpp>
-
-class UserModule : public ControlHandler{
+class UserModule{
 public: 
 
 };

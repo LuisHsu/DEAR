@@ -86,6 +86,10 @@ void Area::ipcConnect(Message *message, void *deliver, DeliverType type, void *d
 	User *newUser = new User(server);
 	server->userData = newUser;
 	users.push_back(newUser);
+	// Init area modules
+	for(std::pair<std::string, AreaModule*> areaModulePair : areaModules){
+		areaModulePair.second->userInit(newUser);
+	}
 	// Send connect notice
 	Message *msg = new Message;
 	msg->type = DEAR_IPC_Connect_notice;

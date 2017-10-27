@@ -1,8 +1,8 @@
 
 find_path(VULKAN_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS
-"$ENV{VULKAN_SDK}/include")
+"/usr/local/include")
 find_library(VULKAN_LIBRARIES NAMES vulkan HINTS
-"$ENV{VULKAN_SDK}/lib")
+"/usr/local/lib")
 
 set(VULKAN_FOUND TRUE)
 

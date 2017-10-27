@@ -95,9 +95,6 @@ DisplayXcb::DisplayXcb(IPCServer *server):
 	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceCreateInfo.pApplicationInfo = &appInfo;
 	instanceCreateInfo.enabledLayerCount = 0;
-	//const char *layerNames[1];
-	//layerNames[0] = "VK_LAYER_LUNARG_standard_validation";
-	//instanceCreateInfo.ppEnabledLayerNames = layerNames;
 	// Extensions
 	instanceCreateInfo.enabledExtensionCount = 3;
 	const char *extensionNames[instanceCreateInfo.enabledExtensionCount];

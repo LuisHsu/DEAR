@@ -88,7 +88,7 @@ void Display::localInit(){
 	vkGetSwapchainImagesKHR(deviceVk, swapChainVk, &swapchainImageCount, nullptr);
 	swapChainImagesVk.resize(swapchainImageCount);
 	vkGetSwapchainImagesKHR(deviceVk, swapChainVk, &swapchainImageCount, swapChainImagesVk.data());
-
+	updatePrimary.resize(swapchainImageCount, true);
 /*** Image views ***/
 	swapChainImageViewsVk.resize(swapchainImageCount);
 	for (size_t i = 0; i < swapChainImagesVk.size(); i++) {
@@ -169,7 +169,7 @@ void Display::localInit(){
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = graphicFamily;
-	poolInfo.flags = 0;
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	switch(vkCreateCommandPool(deviceVk, &poolInfo, nullptr, &commandPoolVk)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan command pool] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -197,6 +197,12 @@ void Display::localInit(){
 		default:
 		break;
 	}
+/*** Command buffer inheritance info ***/
+	inheritanceInfoVk.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	inheritanceInfoVk.renderPass = renderPassVk;
+	inheritanceInfoVk.subpass = 0;
+	inheritanceInfoVk.framebuffer = VK_NULL_HANDLE;
+	inheritanceInfoVk.occlusionQueryEnable = VK_FALSE;
 /*** Create semaphores ***/
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -221,14 +227,15 @@ void Display::localInit(){
 		break;
 	}
 /*** paint ***/
-	paint(true);
+	paint();
 }
-void Display::paint(bool secondaryChanged){
+void Display::paint(){
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(deviceVk, swapChainVk, std::numeric_limits<uint32_t>::max(), imageAvailableSemaphoreVk, VK_NULL_HANDLE, &imageIndex);
 	// Record
-	if(secondaryChanged){
+	if(updatePrimary[imageIndex]){
 		primaryRecord(imageIndex);
+		updatePrimary[imageIndex] = false;
 	}
 	// Submit command buffer
 	VkSubmitInfo submitInfo = {};
@@ -262,7 +269,6 @@ void Display::paint(bool secondaryChanged){
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &swapChainVk;
 	presentInfo.pImageIndices = &imageIndex;
-	
 	switch(vkQueuePresentKHR(presentQueueVk, &presentInfo)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan queue present] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -301,7 +307,7 @@ void Display::primaryRecord(uint32_t index){
 	VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
-	vkCmdBeginRenderPass(commandBuffersVk[index], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffersVk[index], &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 	if(secondaryCommandBuffersVk.size() > 0){
 		vkCmdExecuteCommands(commandBuffersVk[index], secondaryCommandBuffersVk.size(), secondaryCommandBuffersVk.data());
 	}
@@ -315,5 +321,30 @@ void Display::primaryRecord(uint32_t index){
 		break;
 		default:
 		break;
+	}
+}
+VkCommandBuffer *Display::getSecCmdBuffer(){
+	VkCommandBuffer newCmdBuffer = {};
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = commandPoolVk;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+	allocInfo.commandBufferCount = 1;
+	switch(vkAllocateCommandBuffers(deviceVk, &allocInfo, &newCmdBuffer)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+	secondaryCommandBuffersVk.push_back(newCmdBuffer);
+	return &(secondaryCommandBuffersVk.back());
+}
+void Display::update(){
+	for(int i = 0 ; i < updatePrimary.size(); ++i){
+		updatePrimary[i] = true;
 	}
 }

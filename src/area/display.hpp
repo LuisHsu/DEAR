@@ -7,22 +7,28 @@
 class Display{
 public:
 	enum DisplayType {DEAR_DISPLAY_XCB, DEAR_DISPLAY_DIRECT};
+	
 	DisplayType type;
+	VkExtent2D displayExtentVk;
+	VkSurfaceFormatKHR surfaceFormatVk;
+	VkDevice deviceVk;
+	VkRenderPass renderPassVk;
+	VkCommandBufferInheritanceInfo inheritanceInfoVk;
+	std::vector<bool> updatePrimary;
+	
 	void localInit();
-	void paint(bool secondaryChanged = false);
+	void update();
+	VkCommandBuffer *getSecCmdBuffer();
+	void paint();
 protected:
 	VkInstance instanceVk;
 	VkPhysicalDevice phyDeviceVk;
-	VkExtent2D displayExtentVk;
 	VkSurfaceKHR surfaceVk;
-	VkDevice deviceVk;
 	VkQueue graphicQueueVk;
 	VkQueue presentQueueVk;
-	VkSurfaceFormatKHR surfaceFormatVk;
 	VkPresentModeKHR presentModeVk;
 	VkSwapchainKHR swapChainVk;
 	VkCommandPool commandPoolVk;
-	VkRenderPass renderPassVk;
 	VkSemaphore imageAvailableSemaphoreVk;
 	VkSemaphore renderFinishedSemaphoreVk;
 	std::vector<VkImage> swapChainImagesVk;

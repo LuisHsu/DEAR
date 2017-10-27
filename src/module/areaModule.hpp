@@ -2,11 +2,11 @@
 #define DEAR_AREA_MODULE_DEF
 
 #include <string>
-#include <interfaces.hpp>
 
-class AreaModule : public ControlHandler{
+class AreaModule{
 public: 
 	virtual ~AreaModule(){};
+	virtual void userInit(void *user){};
 	virtual void removeModule() = 0;
 };
 

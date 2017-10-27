@@ -2,7 +2,7 @@
 #define DEAR_USER_DEF
 
 #include <list>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 #include <message/IPCServer.hpp>
 #include "displayXcb.hpp"

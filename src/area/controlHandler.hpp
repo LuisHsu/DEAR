@@ -6,6 +6,7 @@
 class ControlHandler{
 public:
 	virtual void pointerMotion(Message *message, void *deliver, MessageHandler::DeliverType type, void *data){};
+	virtual void pointerAxis(Message *message, void *deliver, MessageHandler::DeliverType type, void *data){};
 };
 
 #endif

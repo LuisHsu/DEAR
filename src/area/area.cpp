@@ -62,25 +62,7 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 			std::cout << "PointerDown: " << ((PointerButtonRequest *) message)->button << std::endl;
 		break;
 		case DEAR_PointerAxis_request:
-			std::cout << "PointerAxis: ";
-			switch(((PointerAxisRequest *) message)->source){
-				case PointerAxisRequest::AxisSource::DEAR_POINTER_AXIS_SRC_Wheel:
-					std::cout << "Wheel ";
-				break;
-				case PointerAxisRequest::AxisSource::DEAR_POINTER_AXIS_SRC_Finger:
-					std::cout << "Finger ";
-				break;
-				case PointerAxisRequest::AxisSource::DEAR_POINTER_AXIS_SRC_Continuous:
-					std::cout << "Continuous ";
-				break;
-			}
-			if(((PointerAxisRequest *) message)->axis & PointerAxisRequest::Axis::DEAR_POINTER_AXIS_Horizontal){
-				std::cout << "Horizontal: " << ((PointerAxisRequest *) message)->valueH;
-			}
-			if(((PointerAxisRequest *) message)->axis & PointerAxisRequest::Axis::DEAR_POINTER_AXIS_Vertical){
-				std::cout << "Vertical: " << ((PointerAxisRequest *) message)->valueV;
-			}
-			std::cout << std::endl;
+			user->currentHandler()->pointerAxis(message, deliver, type, data);
 		break;
 		default:
 		break;

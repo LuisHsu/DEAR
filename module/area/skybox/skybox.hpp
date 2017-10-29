@@ -5,8 +5,9 @@
 #include <map>
 #include <fstream>
 #include <cstring>
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <module/areaModule.hpp>
 #include <area/area.hpp>

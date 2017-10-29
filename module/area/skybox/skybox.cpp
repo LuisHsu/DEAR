@@ -63,8 +63,8 @@ void SkyBoxModule::userInit(void *userPtr){
 	vkBindBufferMemory(display->deviceVk, uniformBufferVk, uniformBufferMemoryVk, 0);
 	// Init
 	uniformBufferObject.model = glm::mat4();
-	uniformBufferObject.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	uniformBufferObject.proj = glm::infinitePerspective(glm::radians(60.0f), (float) display->displayExtentVk.width / (float) display->displayExtentVk.height, 0.1f);
+	uniformBufferObject.view = glm::mat4();
+	uniformBufferObject.proj = glm::infinitePerspective(glm::radians(user->cameraFOV), (float) display->displayExtentVk.width / (float) display->displayExtentVk.height, 0.1f);
 	{
 		void* data;
 		vkMapMemory(display->deviceVk, uniformBufferMemoryVk, 0, sizeof(uniformBufferObject), 0, &data);
@@ -131,7 +131,7 @@ void SkyBoxModule::userInit(void *userPtr){
 	// Input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	// Viewport& scissors
 	VkViewport viewport = {};
@@ -267,7 +267,7 @@ void SkyBoxModule::recordCommand(VkCommandBuffer cmdBuffer, Display *display){
 	vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayoutVk, 0, 1, &descriptorSetVk, 0, nullptr);
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineVk);
-	vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+	vkCmdDraw(cmdBuffer, 36, 1, 0, 0);
 	// End command buffer
 	switch(vkEndCommandBuffer(cmdBuffer)){
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
@@ -284,7 +284,24 @@ void SkyBoxModule::recordCommand(VkCommandBuffer cmdBuffer, Display *display){
 }
 
 void SkyBoxModule::pointerMotion(Message *message, void *deliver, MessageHandler::DeliverType type, void *data){
-	std::cout << "Motion" << std::endl;
+	// Get User
+	User *user = nullptr;
+	if(type == MessageHandler::DeliverType::DEAR_MESSAGE_IPCserver){
+		user = (User *)((IPCServer *)deliver)->userData;
+	}
+	// Get motion
+	PointerMotionRequest *request = (PointerMotionRequest *)message;
+	float yRotate = request->dx * 0.05;
+	float xRotate = -request->dy * 0.05;
+	user->cameraRotation += glm::vec3(xRotate, yRotate, 0.0f);
+	glm::quat rotationQuat = glm::angleAxis(user->cameraRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::angleAxis(user->cameraRotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	uniformBufferObject.view = glm::toMat4(rotationQuat);
+	// Paint 
+	void* memoryData;
+	vkMapMemory(user->display->deviceVk, uniformBufferMemoryVk, 0, sizeof(uniformBufferObject), 0, &memoryData);
+	memcpy(memoryData, &uniformBufferObject, sizeof(uniformBufferObject));
+	vkUnmapMemory(user->display->deviceVk, uniformBufferMemoryVk);
+	user->display->paint();
 }
 
 uint32_t SkyBoxModule::findMemoryType(VkPhysicalDevice phyDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties){

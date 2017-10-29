@@ -16,7 +16,10 @@ public:
 	ControlHandler *currentHandler();
 	Display *display = nullptr;
 	glm::vec3 cameraRotation;
-	glm::vec3 cameraTranslation;
+	glm::vec3 cameraDirection;
+	glm::vec3 cameraUp;
+	glm::vec3 cameraPosition;
+	float cameraFOV;
 private:
 	std::deque<ControlHandler *> controlHandlers;
 };

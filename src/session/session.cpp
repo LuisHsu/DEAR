@@ -8,7 +8,7 @@ void Session::handleMessage(Message *message, void *deliver, DeliverType type, v
 	IPCClient *ipcClient = (IPCClient *)deliver;
 	switch(message->type){
 		case DEAR_Connect_notice:
-			std::cout << "Area noticed" << std::endl;
+			std::cout << "Area Connected" << std::endl;
 		break;
 		case DEAR_Close_notice:
 			ipcClient->stop();

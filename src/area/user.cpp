@@ -1,7 +1,11 @@
 #include "user.hpp"
 
 User::User(IPCServer *server):
-	cameraRotation(glm::vec3(0.0f, 0.0f, 0.0f)), cameraTranslation(glm::vec3(0.0f, 0.0f, 0.0f))
+	cameraRotation(glm::vec3(0.0f, 0.0f, 0.0f)),
+	cameraDirection(glm::vec3(0.0f, 0.0f, -1.0f)),
+	cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+	cameraPosition(glm::vec3(0.0f, 0.0f, 0.0f)),
+	cameraFOV(60.0f)
 {
 	// Get display
 	try{

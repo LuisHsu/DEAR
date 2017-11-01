@@ -343,8 +343,59 @@ VkCommandBuffer *Display::getSecCmdBuffer(){
 	secondaryCommandBuffersVk.push_back(newCmdBuffer);
 	return &(secondaryCommandBuffersVk.back());
 }
+VkCommandBuffer *Display::getOneTimeBuffer(){
+	VkCommandBuffer *newCmdBuffer = new VkCommandBuffer;
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = commandPoolVk;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = 1;
+	switch(vkAllocateCommandBuffers(deviceVk, &allocInfo, newCmdBuffer)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan command buffer] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+	VkCommandBufferBeginInfo copyBeginInfo = {};
+    copyBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    copyBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(*newCmdBuffer, &copyBeginInfo);
+	return newCmdBuffer;
+}
+void Display::execOneTimeBuffer(VkCommandBuffer *commandBuffer){
+	vkEndCommandBuffer(*commandBuffer);
+	// Fence
+	VkFence fence;
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	vkCreateFence(deviceVk, &fenceInfo, nullptr, &fence);
+	// Submit
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = commandBuffer;
+	vkQueueSubmit(graphicQueueVk, 1, &submitInfo, fence);
+	while(vkWaitForFences(deviceVk, 1, &fence, VK_FALSE, 3000000) == VK_TIMEOUT);
+	vkDestroyFence(deviceVk, fence, nullptr);
+	vkFreeCommandBuffers(deviceVk, commandPoolVk, 1, commandBuffer);
+	delete commandBuffer;
+}
 void Display::update(){
 	for(uint32_t i = 0 ; i < updatePrimary.size(); ++i){
 		updatePrimary[i] = true;
 	}
+}
+uint32_t Display::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties){
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(phyDeviceVk, &memProperties);
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+	throw "failed to find suitable memory type!";
 }

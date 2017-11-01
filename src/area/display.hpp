@@ -14,15 +14,17 @@ public:
 	VkDevice deviceVk;
 	VkRenderPass renderPassVk;
 	VkCommandBufferInheritanceInfo inheritanceInfoVk;
-	VkPhysicalDevice phyDeviceVk;
-	std::vector<bool> updatePrimary;
-	
 	void localInit();
 	void update();
 	VkCommandBuffer *getSecCmdBuffer();
+	VkCommandBuffer *getOneTimeBuffer();
+	void execOneTimeBuffer(VkCommandBuffer *buffer);
 	void paint();
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
 protected:
 	VkInstance instanceVk;
+	VkPhysicalDevice phyDeviceVk;
 	VkSurfaceKHR surfaceVk;
 	VkQueue graphicQueueVk;
 	VkQueue presentQueueVk;
@@ -36,6 +38,7 @@ protected:
 	std::vector<VkFramebuffer> swapChainFramebuffersVk;
 	std::vector<VkCommandBuffer> commandBuffersVk;
 	std::vector<VkCommandBuffer> secondaryCommandBuffersVk;
+	std::vector<bool> updatePrimary;
 	int32_t graphicFamily = -1;
 	int32_t presentFamily = -1;
 	void primaryRecord(uint32_t index);

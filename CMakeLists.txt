@@ -59,3 +59,8 @@ option(DEAR_AREA_MODULES "Build area module" ON)
 if(DEAR_AREA_MODULES)
 add_subdirectory(module/area)
 endif(DEAR_AREA_MODULES)
+
+option(DEAR_USER_MODULES "Build user module" ON)
+if(DEAR_USER_MODULES)
+add_subdirectory(module/user)
+endif(DEAR_USER_MODULES)

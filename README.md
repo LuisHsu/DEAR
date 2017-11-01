@@ -12,6 +12,23 @@ Dear Desktop manager
 
 + libinput
 
++ libglm
+
 + Vulkan & libvulkan
 
 + libxcb libx11 libx11-xcb
+
+## Module Depedency
+
++ libpng
+
+## TODOS
+
++ better exception model
+
++ configure
+
++ camera limitation
+
++ physics
+

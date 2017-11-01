@@ -3,11 +3,17 @@
 
 #include <vulkan/vulkan.hpp>
 #include <map>
+#include <vector>
 #include <fstream>
 #include <cstring>
+#include <cstdio>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+
+extern "C"{
+	#include <png.h>
+}
 
 #include <module/areaModule.hpp>
 #include <area/area.hpp>
@@ -38,9 +44,12 @@ private:
 	VkDescriptorPool descriptorPoolVk;
 	VkDescriptorSet descriptorSetVk;
 	VkPipelineLayout pipelineLayoutVk;
+	VkImage textureImageVk;
+	VkImageView textureImageViewVk;
+	VkSampler textureSamplerVk;
+	VkDeviceMemory textureImageMemoryVk;
 	UniformBufferObject uniformBufferObject;
 	VkShaderModule createShaderModule(const char *fileName, VkDevice device);
-	uint32_t findMemoryType(VkPhysicalDevice phyDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 };
 
 #endif

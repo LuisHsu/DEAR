@@ -1,6 +1,15 @@
 include_directories(. ../src)
+
+find_package(PNG REQUIRED)
+if(PNG_FOUND)
+include_directories(${PNG_INCLUDE_DIR})
+endif(PNG_FOUND)
+
 add_library(skybox MODULE
 	skybox.cpp
+)
+target_link_libraries(skybox
+	${PNG_LIBRARIES}
 )
 set_target_properties(skybox PROPERTIES
 	OUTPUT_NAME "skybox"

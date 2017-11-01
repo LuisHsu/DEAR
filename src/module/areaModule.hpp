@@ -1,7 +1,6 @@
 #ifndef DEAR_AREA_MODULE_DEF
 #define DEAR_AREA_MODULE_DEF
 
-#include <string>
 #include <area/controlHandler.hpp>
 
 class AreaModule : public ControlHandler{

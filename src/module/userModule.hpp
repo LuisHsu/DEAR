@@ -1,15 +1,16 @@
 #ifndef DEAR_USER_MODULE_DEF
 #define DEAR_USER_MODULE_DEF
 
-class UserModule{
-public: 
+#include <area/controlHandler.hpp>
 
+class UserModule : public ControlHandler{
+public: 
+	virtual ~UserModule(){};
+	virtual void removeModule() = 0;
 };
 
-typedef UserModule *(*user_module_create_t);
-typedef void (*user_module_remove_t)(UserModule *);
+typedef UserModule *(*user_module_create_t)(void *user);
 
-extern "C" UserModule *createModule();
-extern "C" void removeModule(UserModule *);
+extern "C" UserModule *createModule(void *user);
 
 #endif

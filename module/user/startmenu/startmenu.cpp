@@ -2,8 +2,8 @@
 
 StartMenuModule::StartMenuModule(User *user):user(user){
 	Display *display = user->display;
-/*** Skia ***/
-	
+/*** Skia init ***/
+	GrVkBackendContext* vkBackendCtxSkia = display->createSkiaContext();
 }
 
 void StartMenuModule::removeModule(){

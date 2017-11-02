@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vk/GrVkBackendContext.h>
+#include <GrContext.h>
 
 #include <area/user.hpp>
 #include <module/userModule.hpp>
@@ -14,6 +15,7 @@ public:
 	void removeModule();
 private: 
 	User *user;
+	sk_sp<GrContext> skiaCtx;
 };
 
 #endif

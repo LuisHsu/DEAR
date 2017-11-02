@@ -399,3 +399,15 @@ uint32_t Display::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prop
 	}
 	throw "failed to find suitable memory type!";
 }
+GrVkBackendContext *Display::createSkiaContext(){
+	GrVkBackendContext *context = new GrVkBackendContext;
+	context->fInstance = instanceVk;
+    context->fPhysicalDevice = phyDeviceVk;
+    context->fDevice = deviceVk;
+    context->fQueue = graphicQueueVk;
+    context->fGraphicsQueueIndex = graphicFamily;
+    context->fMinAPIVersion = VK_API_VERSION_1_0;
+    context->fExtensions = kEXT_debug_report_GrVkExtensionFlag | kKHR_surface_GrVkExtensionFlag;
+    context->fInterface.reset(GrVkInterface(instanceVk, phyDeviceVk, kEXT_debug_report_GrVkExtensionFlag | kKHR_surface_GrVkExtensionFlag);
+	return context;
+}

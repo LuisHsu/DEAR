@@ -1,3 +1,4 @@
+include_directories(../../third_party/skia/include)
 add_executable(dear-area
 	areaMain.cpp
 	area.cpp

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include <vk/GrVkBackendContext.h>
 
 class Display{
 public:
@@ -21,6 +22,7 @@ public:
 	void execOneTimeBuffer(VkCommandBuffer *buffer);
 	void paint();
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	GrVkBackendContext *createSkiaContext();
 
 protected:
 	VkInstance instanceVk;

@@ -10,10 +10,29 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(GLSLANG_VALIDATOR ${CMAKE_CURRENT_LIST_DIR}/tools/glslangValidator)
 
-find_package(Vulkan REQUIRED)
-if(VULKAN_FOUND)
-include_directories(${VULKAN_INCLUDE_DIR})
-endif(VULKAN_FOUND)
+# Vulkan
+include_directories(${CMAKE_CURRENT_LIST_DIR}/third_party/VulkanTool/include)
+set(VULKAN_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/VulkanTool/lib/libvulkan.so.1.0.61)
+
+# Skia
+include_directories(
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/android
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/c
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/codec
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/config
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/core
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/effects
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/encode
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/gpu
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/pathops
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/ports
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/svg
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/utils
+	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/views
+)
+set(SKIA_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/libskia.a)
+add_definitions(-DSK_VULKAN)
 
 find_package(udev REQUIRED)
 if(LIBUDEV_FOUND)
@@ -48,6 +67,7 @@ endif(XCB_SUPPORT)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/frag)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/vert)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/mod)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/res)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/mod/area)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/mod/user)
 

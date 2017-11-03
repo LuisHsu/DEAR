@@ -408,6 +408,6 @@ GrVkBackendContext *Display::createSkiaContext(){
     context->fGraphicsQueueIndex = graphicFamily;
     context->fMinAPIVersion = VK_API_VERSION_1_0;
     context->fExtensions = kEXT_debug_report_GrVkExtensionFlag | kKHR_surface_GrVkExtensionFlag;
-    context->fInterface.reset(GrVkInterface(instanceVk, phyDeviceVk, kEXT_debug_report_GrVkExtensionFlag | kKHR_surface_GrVkExtensionFlag);
+    context->fInterface = sk_sp<GrVkInterface>(new GrVkInterface(vkGetInstanceProcAddr, vkGetDeviceProcAddr, instanceVk, deviceVk, kEXT_debug_report_GrVkExtensionFlag | kKHR_surface_GrVkExtensionFlag));
 	return context;
 }

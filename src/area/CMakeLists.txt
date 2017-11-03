@@ -1,4 +1,3 @@
-include_directories(../../third_party/skia/include)
 add_executable(dear-area
 	areaMain.cpp
 	area.cpp
@@ -11,4 +10,5 @@ target_link_libraries(dear-area
 	dl
 	${XCB_LIBRARIES}
 	${VULKAN_LIBRARIES}
+	${SKIA_LIBRARIES}
 )

@@ -2,8 +2,7 @@
 #define DEAR_DISPLAY
 
 #include <vector>
-#include <vulkan/vulkan.hpp>
-#include <vk/GrVkBackendContext.h>
+#include <skia.h>
 
 class Display{
 public:

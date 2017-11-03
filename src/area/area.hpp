@@ -20,7 +20,6 @@ extern "C"{
 #include <module/areaModule.hpp>
 #include <inputCode.hpp>
 
-#include "displayXcb.hpp"
 #include "user.hpp"
 
 class Area : public MessageHandler{

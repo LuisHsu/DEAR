@@ -1,10 +1,10 @@
-include_directories(. ../src ${PROJECT_SOURCE_DIR}/third_party/skia/include)
+include_directories(. ../src)
 
 add_library(startmenu MODULE
 	startmenu.cpp
 )
 target_link_libraries(startmenu
-	${PROJECT_SOURCE_DIR}/third_party/skia/libskia.a
+	${SKIA_LIBRARIES}
 )
 set_target_properties(startmenu PROPERTIES
 	OUTPUT_NAME "startmenu"

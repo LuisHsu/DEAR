@@ -11,6 +11,6 @@ public:
 
 typedef UserModule *(*user_module_create_t)(void *user);
 
-extern "C" UserModule *createModule(void *user);
+extern "C" UserModule *createUserModule(void *user);
 
 #endif

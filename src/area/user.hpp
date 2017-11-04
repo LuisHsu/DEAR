@@ -21,6 +21,7 @@ extern "C"{
 class User{
 public:
 	User(IPCServer *server);
+	void initModule();
 	void addHandler(ControlHandler *handler);
 	void popHandler();
 	ControlHandler *currentHandler();

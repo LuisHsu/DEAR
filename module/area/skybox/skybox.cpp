@@ -12,14 +12,14 @@ void SkyBoxModule::userInit(void *userPtr){
 	commandBuffers[user] = cmdBuffer;
 /*** Shader ***/
 	// Vertex
-	vertexModuleVk = createShaderModule("vert/skybox.vert.spv", display->deviceVk);
+	vertexModuleVk = display->createShaderModule("vert/skybox.vert.spv");
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vertShaderStageInfo.module = vertexModuleVk;
 	vertShaderStageInfo.pName = "main";
 	// Fragment
-	fragmentModuleVk = createShaderModule("frag/skybox.frag.spv", display->deviceVk);
+	fragmentModuleVk = display->createShaderModule("frag/skybox.frag.spv");
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -439,43 +439,10 @@ void SkyBoxModule::userInit(void *userPtr){
 	user->addHandler(this);
 }
 
-VkShaderModule SkyBoxModule::createShaderModule(const char *fileName, VkDevice device){
-	// Read code
-	std::ifstream fin(fileName, std::ios::ate | std::ios::binary);
-	if (!fin.is_open()) {
-		throw "[Vulkan shader] failed to open file";
-	}
-	uint32_t codeSize = (size_t)fin.tellg();
-	std::vector<char> shaderCode(codeSize);
-	fin.seekg(0);
-	fin.read(shaderCode.data(), codeSize);
-	fin.close();
-	// Create
-	VkShaderModuleCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = codeSize;
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
-	VkShaderModule ret;
-	switch(vkCreateShaderModule(device, &createInfo, nullptr, &ret)){
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			throw "[Vulkan shader] VK_ERROR_OUT_OF_HOST_MEMORY";
-		break;
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			throw "[Vulkan shader] VK_ERROR_OUT_OF_DEVICE_MEMORY";
-		break;
-		case VK_ERROR_INVALID_SHADER_NV:
-			throw "[Vulkan shader] VK_ERROR_INVALID_SHADER_NV";
-		break;
-		default:
-		break;
-	}
-	return ret;
-}
-
 void SkyBoxModule::recordCommand(VkCommandBuffer cmdBuffer, Display *display){
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 	beginInfo.pInheritanceInfo = &(display->inheritanceInfoVk);
 	// Start command buffer
 	vkBeginCommandBuffer(cmdBuffer, &beginInfo);

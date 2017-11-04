@@ -8,6 +8,7 @@ class StartMenuModule : public UserModule {
 public: 
 	StartMenuModule(User *user);
 	void removeModule();
+	void recordCommand(Display *display);
 private: 
 	User *user;
 	sk_sp<GrContext> skiaCtx;
@@ -15,6 +16,11 @@ private:
 	VkDeviceMemory imageMemoryVk;
 	sk_sp<SkSurface> surfaceSkia;
 	GrBackendTexture backendTextureSkia;
+	VkShaderModule vertexModuleVk;
+	VkShaderModule fragmentModuleVk;
+	VkPipelineLayout pipelineLayoutVk;
+	VkPipeline graphicsPipelineVk;
+	VkCommandBuffer *commandBufferVk;
 };
 
 #endif

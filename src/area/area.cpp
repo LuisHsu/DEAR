@@ -53,7 +53,9 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 			std::cout << "KeyDown: " << ((KeyboardRequest *) message)->key << std::endl;
 		break;
 		case DEAR_PointerMotion_request:
-			user->currentHandler()->pointerMotion(message, deliver, type, data);
+			if(user->currentHandler()){
+				user->currentHandler()->pointerMotion(message, deliver, type, data);
+			}
 		break;
 		case DEAR_PointerUp_request:
 			std::cout << "PointerUp: " << ((PointerButtonRequest *) message)->button << std::endl;
@@ -62,7 +64,9 @@ void Area::handleMessage(Message *message, void *deliver, DeliverType type, void
 			std::cout << "PointerDown: " << ((PointerButtonRequest *) message)->button << std::endl;
 		break;
 		case DEAR_PointerAxis_request:
-			user->currentHandler()->pointerAxis(message, deliver, type, data);
+			if(user->currentHandler()){
+				user->currentHandler()->pointerAxis(message, deliver, type, data);
+			}
 		break;
 		default:
 		break;
@@ -84,6 +88,8 @@ void Area::connectRequest(Message *message, void *deliver, DeliverType type, voi
 	for(std::pair<std::string, AreaModule*> areaModulePair : areaModules){
 		areaModulePair.second->userInit(newUser);
 	}
+	// Init user modules
+	newUser->initModule();
 	// Send connect notice
 	Message *msg = new Message;
 	msg->type = DEAR_Connect_notice;

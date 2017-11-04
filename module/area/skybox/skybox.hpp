@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.hpp>
 #include <map>
 #include <vector>
-#include <fstream>
 #include <cstring>
 #include <cstdio>
 #include <glm/gtc/matrix_transform.hpp>
@@ -49,7 +48,6 @@ private:
 	VkSampler textureSamplerVk;
 	VkDeviceMemory textureImageMemoryVk;
 	UniformBufferObject uniformBufferObject;
-	VkShaderModule createShaderModule(const char *fileName, VkDevice device);
 };
 
 #endif

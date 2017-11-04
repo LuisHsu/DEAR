@@ -2,6 +2,7 @@
 #define DEAR_DISPLAY
 
 #include <vector>
+#include <fstream>
 #include <skia.h>
 
 class Display{
@@ -22,6 +23,7 @@ public:
 	void paint();
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	GrVkBackendContext *createSkiaContext();
+	VkShaderModule createShaderModule(const char *fileName);
 
 protected:
 	VkInstance instanceVk;

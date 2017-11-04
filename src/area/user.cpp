@@ -22,16 +22,30 @@ User::User(IPCServer *server):
 	if(display){
 		display->localInit();
 	}
-/*** User module ***/
+}
+void User::addHandler(ControlHandler *handler){
+	controlHandlers.push_back(handler);
+}
+void User::popHandler(){
+	controlHandlers.pop_back();
+}
+ControlHandler* User::currentHandler(){
+	if(controlHandlers.size() > 0){
+		return controlHandlers.back();
+	}else{
+		return nullptr;
+	}
+}
+void User::initModule(){
 	const std::string modDir("mod/user");
 	// Get module directory
-	DIR *areaModDir = opendir(modDir.c_str());
-	if(!areaModDir){
+	DIR *userModDir = opendir(modDir.c_str());
+	if(!userModDir){
 		perror("[User module] Open module directory error:");
 	}
 	// Load modules
 	struct dirent *entry = nullptr;
-	while((entry = readdir(areaModDir)) != nullptr){
+	while((entry = readdir(userModDir)) != nullptr){
 		if(entry->d_type == DT_REG){
 			// Get dl handle
 			void *modHandle = dlopen((modDir + "/" + entry->d_name).c_str(), RTLD_LAZY);
@@ -47,13 +61,4 @@ User::User(IPCServer *server):
 			userModules[entry->d_name] = createFunc(this);
 		}
 	}
-}
-void User::addHandler(ControlHandler *handler){
-	controlHandlers.push_back(handler);
-}
-void User::popHandler(){
-	controlHandlers.pop_back();
-}
-ControlHandler* User::currentHandler(){
-	return controlHandlers.back();
 }

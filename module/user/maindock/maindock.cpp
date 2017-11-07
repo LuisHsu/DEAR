@@ -1,6 +1,6 @@
-#include "startmenu.hpp"
+#include "maindock.hpp"
 
-StartMenuModule::StartMenuModule(User *user):user(user){
+MainDockModule::MainDockModule(User *user):user(user){
 	Display *display = user->display;
 /*** Image ***/
 	// Create image
@@ -20,7 +20,7 @@ StartMenuModule::StartMenuModule(User *user):user(user){
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 	if (vkCreateImage(display->deviceVk, &imageCreateInfo, nullptr, &imageVk) != VK_SUCCESS) {
-		throw "[Startmenu image] Error create image";
+		throw "[MainDock image] Error create image";
 	}
 	// Image memory
 	VkMemoryRequirements imageMemRequirements;
@@ -30,9 +30,103 @@ StartMenuModule::StartMenuModule(User *user):user(user){
 	imageMemAllocInfo.allocationSize = imageMemRequirements.size;
 	imageMemAllocInfo.memoryTypeIndex = display->findMemoryType(imageMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	if (vkAllocateMemory(display->deviceVk, &imageMemAllocInfo, nullptr, &imageMemoryVk) != VK_SUCCESS) {
-		throw "[Startmenu image] Error create image memory";
+		throw "[MainDock image] Error create image memory";
 	}
 	vkBindImageMemory(display->deviceVk, imageVk, imageMemoryVk, 0);
+/*** Image view ***/
+	VkImageViewCreateInfo imageViewInfo = {};
+	imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewInfo.image = imageVk;
+	imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewInfo.format = display->surfaceFormatVk.format;
+	imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewInfo.subresourceRange.baseMipLevel = 0;
+	imageViewInfo.subresourceRange.levelCount = 1;
+	imageViewInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewInfo.subresourceRange.layerCount = 1;
+	if (vkCreateImageView(display->deviceVk, &imageViewInfo, nullptr, &imageViewVk) != VK_SUCCESS) {
+		throw "[MainDock image view] Error create image view";
+	}
+/*** Sampler ***/
+	// Create
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+	if (vkCreateSampler(display->deviceVk, &samplerInfo, nullptr, &samplerVk) != VK_SUCCESS) {
+        throw "[SkyBox texture sampler] Error create sampler";
+	}
+	// Layout binding
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+/*** Descriptor pool & set ***/
+	// Descriptor pool
+	VkDescriptorPoolSize poolSize;
+	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSize.descriptorCount = 1;
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = 1;
+	if(vkCreateDescriptorPool(display->deviceVk, &poolInfo, nullptr, &descriptorPoolVk) != VK_SUCCESS) {
+		throw "[Vulkan descriptor pool] Error create descriptor pool";
+	}
+	// Descriptor set layout
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &samplerLayoutBinding;
+	switch(vkCreateDescriptorSetLayout(display->deviceVk, &layoutInfo, nullptr, &descriptorSetLayout)){
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			throw "[Vulkan descriptor layout] VK_ERROR_OUT_OF_HOST_MEMORY";
+		break;
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			throw "[Vulkan descriptor layout] VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		break;
+		default:
+		break;
+	}
+	// Descriptor set
+	VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
+	descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocInfo.descriptorPool = descriptorPoolVk;
+	descriptorSetAllocInfo.descriptorSetCount = 1;
+	descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
+	if(vkAllocateDescriptorSets(display->deviceVk, &descriptorSetAllocInfo, &descriptorSetVk) != VK_SUCCESS) {
+		throw "[Vulkan descriptor set] Error create descriptor set";
+	}
+	VkDescriptorImageInfo descImageInfo = {};
+	descImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	descImageInfo.imageView = imageViewVk;
+	descImageInfo.sampler = samplerVk;
+	// Descriptor write
+	VkWriteDescriptorSet descriptorWrite;
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = descriptorSetVk;
+	descriptorWrite.dstBinding = 0;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pImageInfo = &descImageInfo;
+	vkUpdateDescriptorSets(display->deviceVk, 1, &descriptorWrite, 0, nullptr);
 /*** Skia surface ***/
 	// Context
 	GrVkBackendContext* vkBackendCtxSkia = display->createSkiaContext();
@@ -62,14 +156,14 @@ StartMenuModule::StartMenuModule(User *user):user(user){
     }
 /*** Shader ***/
 	// Vertex
-	vertexModuleVk = display->createShaderModule("vert/startmenu.vert.spv");
+	vertexModuleVk = display->createShaderModule("vert/maindock.vert.spv");
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vertShaderStageInfo.module = vertexModuleVk;
 	vertShaderStageInfo.pName = "main";
-	// Fragment
-	fragmentModuleVk = display->createShaderModule("frag/startmenu.frag.spv");
+	// fragment
+	fragmentModuleVk = display->createShaderModule("frag/maindock.frag.spv");
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -139,7 +233,8 @@ StartMenuModule::StartMenuModule(User *user):user(user){
 	// Pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 	switch(vkCreatePipelineLayout(display->deviceVk, &pipelineLayoutInfo, nullptr, &pipelineLayoutVk)) {
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
 			throw "[Vulkan pipeline layout] VK_ERROR_OUT_OF_HOST_MEMORY";
@@ -184,13 +279,14 @@ StartMenuModule::StartMenuModule(User *user):user(user){
 	recordCommand(display);
 }
 
-void StartMenuModule::recordCommand(Display *display){
+void MainDockModule::recordCommand(Display *display){
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 	beginInfo.pInheritanceInfo = &(display->inheritanceInfoVk);
 	// Start command buffer
 	vkBeginCommandBuffer(*commandBufferVk, &beginInfo);
+	vkCmdBindDescriptorSets(*commandBufferVk, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayoutVk, 0, 1, &descriptorSetVk, 0, nullptr);
 	vkCmdBindPipeline(*commandBufferVk, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineVk);
 	vkCmdDraw(*commandBufferVk, 6, 1, 0, 0);
 	// End command buffer
@@ -205,13 +301,22 @@ void StartMenuModule::recordCommand(Display *display){
 		break;
 	}
 	display->update();
-	display->paint();
+	paint();
 }
 
-void StartMenuModule::removeModule(){
+void MainDockModule::paint(){
+	SkCanvas *canvas = surfaceSkia->getCanvas();
+	SkPaint paint1;
+    paint1.setColor(SK_ColorWHITE);
+	canvas->drawPaint(paint1);
+	canvas->flush();
+	user->display->paint();
+}
+
+void MainDockModule::removeModule(){
 	delete this;
 }
 
 UserModule *createUserModule(void *user){
-	return new StartMenuModule((User *)user);
+	return new MainDockModule((User *)user);
 }

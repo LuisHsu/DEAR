@@ -1,1 +1,1 @@
-add_subdirectory(startmenu)
+add_subdirectory(maindock)

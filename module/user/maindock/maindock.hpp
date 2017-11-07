@@ -1,13 +1,14 @@
-#ifndef DEAR_AREA_MODULE_STARTMENU_DEF
-#define DEAR_AREA_MODULE_STARTMENU_DEF
+#ifndef DEAR_AREA_MODULE_MAINDOCK_DEF
+#define DEAR_AREA_MODULE_MAINDOCK_DEF
 
 #include <area/user.hpp>
 #include <module/userModule.hpp>
 
-class StartMenuModule : public UserModule {
+class MainDockModule : public UserModule {
 public: 
-	StartMenuModule(User *user);
+	MainDockModule(User *user);
 	void removeModule();
+	void paint();
 	void recordCommand(Display *display);
 private: 
 	User *user;
@@ -21,6 +22,10 @@ private:
 	VkPipelineLayout pipelineLayoutVk;
 	VkPipeline graphicsPipelineVk;
 	VkCommandBuffer *commandBufferVk;
+	VkImageView imageViewVk;
+	VkSampler samplerVk;
+	VkDescriptorPool descriptorPoolVk;
+	VkDescriptorSet descriptorSetVk;
 };
 
 #endif

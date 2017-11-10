@@ -16,7 +16,6 @@ set(VULKAN_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/VulkanTool/lib/libvul
 
 # Skia
 include_directories(
-	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include
 	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/android
 	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/c
 	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/codec
@@ -31,8 +30,11 @@ include_directories(
 	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/utils
 	${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/include/views
 )
-set(SKIA_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/libskia.a)
+set(SKIA_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/out/Static/libskia.a)
 add_definitions(-DSK_VULKAN)
+
+# RapidXML
+include_directories(${CMAKE_CURRENT_LIST_DIR}/third_party/RapidXML)
 
 find_package(udev REQUIRED)
 if(LIBUDEV_FOUND)
@@ -73,6 +75,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/mod/user)
 
 include_directories(src)
 add_subdirectory(src/message)
+add_subdirectory(src/svg)
 add_subdirectory(src/area)
 add_subdirectory(src/session)
 

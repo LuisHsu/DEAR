@@ -25,21 +25,17 @@ cd "${THIRD_PARTY_PATH}/Skia"
 python tools/git-sync-deps
 git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
 export PATH="${THIRD_PARTY_PATH}/Skia/depot_tools:${PATH}"
-bin/gn gen out/Debug --args=`echo skia_vulkan_sdk=\"${THIRD_PARTY_PATH}/VulkanTool\"`
-ninja -C out/Debug
-mkdir "${THIRD_PARTY_PATH}/.Skia"
-mv out/Debug/libskia.a "${THIRD_PARTY_PATH}/.Skia"
-mv include "${THIRD_PARTY_PATH}/.Skia"
-mv out/Debug/gen/skia.h "${THIRD_PARTY_PATH}/.Skia/include"
-cd ..
-rm -rf "${THIRD_PARTY_PATH}/Skia"
-mv "${THIRD_PARTY_PATH}/.Skia" "${THIRD_PARTY_PATH}/Skia"
+bin/gn gen out/Static --args='is_official_build=true'
+echo skia_vulkan_sdk = "\"${THIRD_PARTY_PATH}/VulkanTool\"" >> out/Static/args.gn
+echo skia_use_libwebp = false >> out/Static/args.gn
+echo skia_use_libjpeg_turbo = false >> out/Static/args.gn
+ninja -C out/Static
 
-# SVGpp
-git clone git@github.com:svgpp/svgpp.git "${THIRD_PARTY_PATH}/SVGpp-tmp"
-cd "${THIRD_PARTY_PATH}/SVGpp-tmp"
-git checkout v1.2.3
-mkdir ../SVGpp 
-mv ./include ../SVGpp 
+# RapidXML
+cd "${THIRD_PARTY_PATH}"
+git clone git@github.com:svgpp/rapidxml_ns.git "${THIRD_PARTY_PATH}/RapidXML-tmp"
+cd "${THIRD_PARTY_PATH}/RapidXML-tmp"
+mkdir ../RapidXML
+mv *.hpp ../RapidXML
 cd ..
-rm -rf ./SVGpp-tmp
+rm -rf RapidXML-tmp

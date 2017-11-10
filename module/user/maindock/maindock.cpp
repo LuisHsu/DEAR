@@ -306,9 +306,7 @@ void MainDockModule::recordCommand(Display *display){
 
 void MainDockModule::paint(){
 	SkCanvas *canvas = surfaceSkia->getCanvas();
-	SkPaint paint1;
-    paint1.setColor(SK_ColorWHITE);
-	canvas->drawPaint(paint1);
+	
 	canvas->flush();
 	user->display->paint();
 }

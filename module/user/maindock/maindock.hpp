@@ -1,6 +1,11 @@
 #ifndef DEAR_AREA_MODULE_MAINDOCK_DEF
 #define DEAR_AREA_MODULE_MAINDOCK_DEF
 
+#include <GrContext.h>
+#include <SkSurface.h>
+#include <SkCanvas.h>
+#include <GrBackendSurface.h>
+
 #include <area/user.hpp>
 #include <module/userModule.hpp>
 

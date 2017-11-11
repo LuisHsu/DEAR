@@ -33,8 +33,10 @@ include_directories(
 set(SKIA_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/third_party/Skia/out/Static/libskia.a)
 add_definitions(-DSK_VULKAN)
 
-# RapidXML
-include_directories(${CMAKE_CURRENT_LIST_DIR}/third_party/RapidXML)
+find_package(Xml REQUIRED)
+if(XML_FOUND)
+include_directories(${XML_INCLUDE_DIR})
+endif(XML_FOUND)
 
 find_package(udev REQUIRED)
 if(LIBUDEV_FOUND)

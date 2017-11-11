@@ -14,6 +14,8 @@ Dear Desktop manager
 
 + libglm
 
++ libxml2
+
 + Vulkan & libvulkan
 
 + libxcb libx11 libx11-xcb

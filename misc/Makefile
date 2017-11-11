@@ -1,9 +1,9 @@
 CXX = g++
 CFLAGS = -std=c++11 -g -DSK_VULKAN
 
-svgtest: svgtest.cpp ../src/svg/renderer.cpp ../src/svg/svg.cpp
+svgtest: svgtest.cpp
 	$(CXX) $(CFLAGS) -o $@ \
-	-I../third_party/RapidXML \
+	-I/usr/include/libxml2 \
 	-I../third_party/VulkanTool/include \
 	-I../third_party/Skia/include \
 	-I../third_party/Skia/include/android \
@@ -20,4 +20,5 @@ svgtest: svgtest.cpp ../src/svg/renderer.cpp ../src/svg/svg.cpp
 	-I../third_party/Skia/include/utils \
 	-I../third_party/Skia/include/views \
 	-L../third_party/Skia/out/Static \
-	svgtest.cpp  ../src/svg/renderer.cpp ../src/svg/svg.cpp -lskia -lpthread -lpng -lGL -lglfw -lfontconfig -lfreetype -ldl
+	-L../build/src/svg \
+	svgtest.cpp -ldearSVG_d -lskia -lpthread -lpng -lGL -lglfw -lfontconfig -lfreetype -ldl -lxml2

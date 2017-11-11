@@ -1,7 +1,7 @@
 find_package(PkgConfig)
 pkg_check_modules(PKG_LIBINPUT REQUIRED libinput)
 
-find_path(LIBINPUT_INCLUDE_DIR libinput.h ${PKG_LIBINPUT_INCLUDE_DIRS})
+find_path(LIBINPUT_INCLUDE_DIR libxml/parser.h ${PKG_LIBINPUT_INCLUDE_DIRS})
 
 find_library(LIBINPUT_LIBRARIES NAMES input PATHS ${PKG_LIBINPUT_LIBRARY_DIRS})
 

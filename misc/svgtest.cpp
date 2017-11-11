@@ -1,9 +1,10 @@
 #include <iostream>
+#include <cstdio>
 
 #include <SkSurface.h>
 #include <SkCanvas.h>
 #include <GrContext.h>
-#include <SkImageInfo.h>
+#include <GrBackendSurface.h>
 
 #include <GLFW/glfw3.h>
 
@@ -12,16 +13,13 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
-void renderPic(const char *path){
-	sk_sp<GrContext> context = GrContext::MakeGL(nullptr);
-    SkImageInfo info = SkImageInfo:: MakeN32Premul(WINDOW_WIDTH, WINDOW_HEIGHT);
-    sk_sp<SkSurface> gpuSurface(SkSurface::MakeRenderTarget(context.get(), SkBudgeted::kNo, info));
-    if (!gpuSurface) {
-        SkDebugf("SkSurface::MakeRenderTarget returned null\n");
-        return;
-    }
-    SkCanvas* canvas = gpuSurface->getCanvas();
-	SVGRenderer renderer(path);
+void renderPic(const char *path, SkCanvas* canvas){
+	// Get pixel per millimeter
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	int phyWidth, phyHeight;
+	glfwGetMonitorPhysicalSize(monitor, &phyWidth, &phyHeight);
+
+	SVGRenderer renderer(path,(double) glfwGetVideoMode(monitor)->width / (double) phyWidth);
 	renderer.render(canvas);
 	canvas->flush();
 }
@@ -39,10 +37,17 @@ int main(int argc, char *argv[]){
 	}
 	glfwMakeContextCurrent(window);
 
+	GrContext *grContext = GrContext::MakeGL(nullptr).release();
+	GrGLFramebufferInfo framebufferInfo;
+    framebufferInfo.fFBOID = 0;
+    GrBackendRenderTarget backendRenderTarget(WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, kSkia8888_GrPixelConfig, framebufferInfo);
+	SkSurface *gpuSurface = SkSurface::MakeFromBackendRenderTarget(grContext, backendRenderTarget, kBottomLeft_GrSurfaceOrigin, nullptr, nullptr).release();
+	SkCanvas* gpuCanvas = gpuSurface->getCanvas();
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT);
-		renderPic(argv[1]);
+		renderPic(argv[1], gpuCanvas);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

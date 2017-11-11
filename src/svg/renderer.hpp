@@ -8,14 +8,15 @@
 #include <string>
 #include <stack>
 
-#include <rapidxml_ns.hpp>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <SkCanvas.h>
 #include <SkPictureRecorder.h>
 #include <SkPicture.h>
 
 class SVGRenderer{
 public: 
-	SVGRenderer(const char *filename);
+	SVGRenderer(const char *filename, double pixelPerMM);
 	void render(SkCanvas *canvas);
 
 private:
@@ -24,12 +25,13 @@ private:
 		SkCanvas *canvas;
 		SkPictureRecorder *recorder;
 	};
+	double pixelPerMM;
 	std::stack<RecorderClass> recorderStack;
-	rapidxml_ns::xml_document<> svgDoc;
-	std::unordered_map<std::string, void (*)(SVGRenderer *renderer, rapidxml_ns::xml_node<> *)> elementFuncMap;
+	xmlDocPtr svgDoc;
+	std::unordered_map<std::string, void (*)(SVGRenderer *, xmlNodePtr)> elementFuncMap;
 	
-	void traverse(rapidxml_ns::xml_node<> *svg_element);
-	static void elem_svg_enter(SVGRenderer *renderer, rapidxml_ns::xml_node<> *element);
-	static void elem_svg_exit(SVGRenderer *renderer, rapidxml_ns::xml_node<> *element);
+	void traverse(xmlNodePtr element);
+	static void elem_svg_enter(SVGRenderer *renderer, xmlNodePtr element);
+	static void elem_svg_exit(SVGRenderer *renderer, xmlNodePtr element);
 };
 #endif

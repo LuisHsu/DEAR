@@ -1,7 +1,9 @@
 #include "svgElem.hpp"
 
 SVGsvgElement::SVGsvgElement():SVGElement(attrParseMap_t({
-	{"id", parseIdAttr}
+	{"id", SVGAttribute::parseId},
+	{"space", SVGAttribute::parsePreserveXmlSpace},
+	{"class", SVGAttribute::parseClass},
 })){
 }
 void SVGsvgElement::parseEnter(xmlDocPtr doc, xmlNodePtr element, SVGElement* &elemPtr){
@@ -10,8 +12,4 @@ void SVGsvgElement::parseEnter(xmlDocPtr doc, xmlNodePtr element, SVGElement* &e
 }
 SVGElement* SVGsvgElement::parseExit(xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr){
 	return elemPtr;
-}
-
-void SVGsvgElement::parseIdAttr(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemObj){
-	id = value;
 }

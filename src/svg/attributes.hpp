@@ -546,84 +546,102 @@ class attr_values {
 public:
 	std::string valuesAttr;
 };
-class attr_vert_adv_y {
-public:
-	std::string vertAdvYAttr;
-};
-class attr_vert_origin_x {
-public:
-	std::string vert_origin_xAttr;
-};
-class attr_vert_origin_y {
-public:
-	std::string vert_origin_yAttr;
-};
-class attr_viewBox {
-public:
-	std::string viewBoxAttr;
-};
-class attr_viewTarget {
-public:
-	std::string viewTargetAttr;
-};
-class attr_width {
-public:
-	std::string widthAttr;
-};
-class attr_x {
-public:
-	std::string xAttr;
-};
-class attr_x_height {
-public:
-	std::string x_heightAttr;
-};
-class attr_x1 {
-public:
-	std::string x1Attr;
-};
-class attr_x2 {
-public:
-	std::string x2Attr;
-};
-class attr_xChannelSelector {
-public:
-	std::string xChannelSelectorAttr;
-};
-class attr_preserveXmlSpace {
-public:
-	bool preserveXmlSpaceAttr;
-};
-class attr_y {
-public:
-	std::string yAttr;
-};
-class attr_y1 {
-public:
-	std::string y1Attr;
-};
-class attr_y2 {
-public:
-	std::string y2Attr;
-};
-class attr_yChannelSelector {
-public:
-	std::string yChannelSelectorAttr;
-};
-class attr_z {
-public:
-	std::string zAttr;
-};
+	class attr_vert_adv_y {
+	public:
+		float vertAdvYAttr;
+	};
+	class attr_vert_origin_x {
+	public:
+		float vertOriginXAttr;
+	};
+	class attr_vert_origin_y {
+	public:
+		float vertOriginYAttr;
+	};
+	class attr_viewBox {
+	public:
+		std::string viewBoxAttr;
+	};
+	class attr_viewTarget {
+	public:
+		std::string viewTargetAttr;
+	};
+	class attr_width {
+	public:
+		std::string widthAttr;
+	};
+	class attr_x {
+	public:
+		std::string xAttr;
+	};
+	class attr_x_height {
+	public:
+		float xHeightAttr;
+	};
+	class attr_x1 {
+	public:
+		std::string x1Attr;
+	};
+	class attr_x2 {
+	public:
+		std::string x2Attr;
+	};
+	class attr_xChannelSelector {
+	public:
+		enum XChannel {R, G, B, A};
+		XChannel xChannelSelectorAttr = A;
+	};
+	class attr_preserveXmlSpace {
+	public:
+		bool preserveXmlSpaceAttr;
+	};
+	class attr_y {
+	public:
+		std::string yAttr;
+	};
+	class attr_y1 {
+	public:
+		std::string y1Attr;
+	};
+	class attr_y2 {
+	public:
+		std::string y2Attr;
+	};
+	class attr_yChannelSelector {
+	public:
+		enum YChannel {R, G, B, A};
+		YChannel yChannelSelectorAttr = A;
+	};
+	class attr_z {
+	public:
+		float zAttr;
+	};
 	class attr_zoomAndPan {
 	public:
-		bool zoomAndPanAttr;
+		bool zoomAndPanAttr = true;
 	};
 /*** parse functions ***/
+	void parseVertAdvY(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseVertOriginX(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseVertOriginY(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseX(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseX1(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseX2(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseY(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseY1(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseY2(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parseAlphabetic(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parseAccentHeight(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parseId(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parseClass(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseViewTarget(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseXChannelSelector(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parsePreserveXmlSpace(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseYChannelSelector(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseZ(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 	void parseZoomAndPan(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseXHeight(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseWidth(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
+	void parseViewBox(std::string value, xmlDocPtr doc, xmlNodePtr element, SVGElement *elemPtr);
 };
 #endif

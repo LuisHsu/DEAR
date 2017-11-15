@@ -14,13 +14,13 @@ public:
 	SVGRenderer(const char *filename, double pixelPerMM);
 	void render(SkCanvas *canvas);
 private:
+	double pixelPerMM;
 	class RecorderClass{
 	public:
 		SkCanvas *canvas;
 		SkPictureRecorder *recorder;
 	};
 	SVGElement *tree;
-	double pixelPerMM;
 	std::stack<RecorderClass> recorderStack;
 
 };
